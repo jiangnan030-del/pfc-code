@@ -1,0 +1,72 @@
+; ============================================================
+; 步骤五：锚杆拉拔（施加拉拔力）
+;   - model restore 'sample_anchor'（上一步：锚杆颗粒已彼此胶结为刚性杆体，且首尾颗粒 id 已记录为
+;       anchor_id_anchor = 锚固颗粒（首粒，岩内锚固端 x0 侧）
+;       anchor_id_pull   = 拉拔/张拉颗粒（尾粒，自由拉拔端 x1 侧）
+;       —— 这两个 id 由 04 以 Fish 全局变量存入 sample_anchor.sav，restore 后可用。）
+;   - 固定锚固颗粒（速度/自转锁 0，使其在整个拉拔过程中不动）
+;   - 对拉拔/张拉颗粒施加向外的力（+x 方向）
+;   - 监测：拉拔位移、锚固端反力
+;   - model solve（或 model cycle）拉拔 → model save 'sample_pullout'
+; ============================================================
+
+model restore 'sample_anchor'
+
+; ---------- 拉拔参数（Fish 变量，集中定义）----------
+; 拉拔力大小（向外 +x 方向；占位值，需按锚杆/围岩强度标定）
+[pull_force   = 1.0e5]
+; 求解控制：默认用 model solve 收敛到准静态平衡（ratio-average：平均不平衡力比）。
+;   —— 若拉拔力 > 峰值阻力，锚杆会“持续拔出”，系统不收敛，可改为
+;      `model cycle [pull_cycles]` 给定步数拉拔（见文末）。
+[pull_ratio   = 1.0e-3]
+
+; ---------- 固定锚固颗粒（首颗粒，岩内锚固端 x0 侧）----------
+; ball fix velocity / spin 将其速度、自转锁为 0，使该颗粒在拉拔过程中保持不动，
+; 作为锚固端约束（力沿 x 轴、作用线过锚固颗粒，纯轴向拉拔、无附加扭矩）。
+ball fix velocity range id [anchor_id_anchor]
+ball fix spin    range id [anchor_id_anchor]
+
+; ---------- 记录拉拔颗粒初始 x 位置（用于计算拉拔位移）----------
+fish define init_pullout
+    global pull_x0   = ball.pos.x(ball.find(anchor_id_pull))
+    global pull_disp = 0.0
+    global anchor_rx = 0.0
+end
+@init_pullout
+
+; ---------- 对拉拔/张拉颗粒施加向外的力（+x 方向）----------
+; force-applied-x 为外加力，每个 cycle 持续作用于该颗粒；
+; 经刚性杆体（锚杆颗粒彼此 linearpbond 胶结）传导至整根锚杆，在锚杆-围岩界面产生拉拔阻力。
+ball attribute force-applied-x [pull_force] range id [anchor_id_pull]
+
+; ---------- 监测（history fish）----------
+; 拉拔位移：拉拔颗粒当前 x 相对初始 x 的增量
+fish define pull_disp_func
+    pull_disp_func = ball.pos.x(ball.find(anchor_id_pull)) - pull_x0
+end
+; 锚固端反力：锚固颗粒所受接触合力 x 分量（ball.force.contact.x，= 锚杆-围岩界面向锚杆传递的拉拔阻力）
+fish define anchor_rx_func
+    anchor_rx_func = ball.force.contact.x(ball.find(anchor_id_anchor))
+end
+history id 1 fish pull_disp_func
+history id 2 fish anchor_rx_func
+
+; ---------- 求解（拉拔）----------
+; 准静态收敛（用 ratio-average：平均不平衡力比；若持续拔出不收敛，改用 model cycle 给定步数，见下方注释）
+model solve ratio-average [pull_ratio]
+
+; 备选（持续拔出场景，取消注释并注释掉上面 model solve 一行）：
+; [pull_cycles = 200000]
+; model cycle [pull_cycles]
+
+; ---------- 保存本步结果 ----------
+model save 'sample_pullout'
+
+; ========== 说明 ==========
+; 本步边界条件：锚固颗粒（anchor_id_anchor）固定不动；拉拔/张拉颗粒（anchor_id_pull）受 +x 向外力。
+; 力经刚性杆体传导，拉拔阻力来自锚杆-围岩界面（线性接触，未胶结）与围岩体；监测量：
+;   - pull_disp_func：拉拔颗粒位移（= 整体拔出量/弹性伸长）
+;   - anchor_rx_func：锚固端接触合力 x（ball.force.contact.x，= 界面提供的总拉拔阻力，力平衡时 ≈ 施加的 pull_force）
+; 注：若希望锚杆“真正滑出”围岩（而非仅弹性拉伸），应让锚固端由围岩提供锚固（不固定锚固颗粒），
+; 仅对拉拔端施力/位移到拉拔；当前按“固定锚固颗粒”实现，符合本步要求。
+; 下一步：可提取 history 绘制“拉拔力-位移”曲线、统计锚杆-围岩界面滑移与围岩破裂，或做参数扫描。

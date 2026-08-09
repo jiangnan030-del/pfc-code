@@ -1,0 +1,84 @@
+; ============================================================
+; 步骤六：浆液粘结（grout bonding）——直接胶结锚杆与岩石，模拟浆液粘结作用
+;   - 不引入新颗粒；直接把“锚杆-岩石”界面接触胶结为平行粘结，模拟浆液把锚杆与围岩粘结成整体
+;   - 先 model restore 'sample_pullout'（上一步 05：锚杆已施拉拔——锚固颗粒被 ball fix 固定、
+;     拉拔颗粒受 force-applied-x 向外力；序列 05→06 线性递进。锚杆-岩石界面仍为线性接触[不胶结]）
+;   - 采用 range fish 精确筛选“锚杆-岩石”界面接触：
+;       · 定义 FISH 函数 is_grout(pos, c)：仅当接触为球-球、且“一端为 shiyang、另一端为 anchor_ball”
+;         时返回 true —— 直接、精确地筛出界面接触（浆液粘结的载体）
+;       · 调用语法：range fish @is_grout（注意 fish 函数名前加 @；FISH 逻辑运算符用 & 与 |，不用 and/or）
+;       · id 3（锚杆-岩石界面）：`range fish @is_grout`（试样内 id1=shiyang(match 2)、锚杆内 id2=anchor_ball(match 2)
+;         都已只命中“组内”接触，故 is_grout 命中的必是“跨组”界面接触）
+;       · 后续 `contact cmat apply` / `contact method bond` 都直接用 `range fish @is_grout`，
+;         无需先遍历打标 group，更直接、可读，且不存在“cmat apply 重建接触导致组标记丢失”的风险
+;   - 完成后 model save 'sample_grout'
+; ============================================================
+
+model restore 'sample_pullout'
+
+; ---------- 浆液(界面)专用平行粘结参数（占位值，需标定）----------
+; 浆液/界面的粘结强度通常是锚固系统的弱点，取弱于岩石的量级（此处取岩石的 0.3 倍作为占位）
+[emod_grout      = 1.0e8]   ; 浆液线性有效模量
+[kratio_grout    = 1.0]
+[pb_emod_grout   = 1.0e8]   ; 浆液平行粘结模量
+[pb_kratio_grout = 1.0]
+[pb_ten_grout    = 3.0e5]   ; 浆液抗拉强度（弱于岩石，占位值）
+[pb_coh_grout    = 3.0e5]   ; 浆液内聚强度（弱于岩石，占位值）
+[pb_fa_grout     = 30.0]    ; 浆液摩擦角
+[bond_gap_grout  = 2.0]     ; 浆液可填充间隙：取岩石最低粒径量级，桥接锚杆-岩石界面间隙
+[rgap            = 1.0e-5]  ; 参考间隙(极小正值)：保证界面相切接触稳定激活、可胶结（与 03 一致）
+
+; ---------- 用 range fish 精确界定“锚杆-岩石”界面接触 ----------
+; is_grout(pos, c)：range fish 的 FISH 函数，PFC 会向它传入 (位置向量, 元素指针)；此处 c 即接触指针。
+;   仅当接触满足“球-球 且 两端分属 shiyang 与 anchor_ball”时返回 true，直接筛出界面接触。
+fish define is_grout(pos, c)
+    is_grout = false
+    if type.pointer.id(c) == contact.typeid('ball-ball')
+        local b1 = contact.end1(c)
+        local b2 = contact.end2(c)
+        if (ball.isgroup(b1,'shiyang')    & ball.isgroup(b2,'anchor_ball')) | ...
+           (ball.isgroup(b1,'anchor_ball') & ball.isgroup(b2,'shiyang'))
+            is_grout = true
+        endif
+    endif
+end
+
+; 锚杆-岩石界面(anchor_ball-shiyang)：id 3，用 range fish @is_grout 精确命中界面接触。
+;   试样内(id 1 = shiyang, match 2) / 锚杆内(id 2 = anchor_ball, match 2) 模型与 03/04 完全一致（restore 已带回），
+;   故此处 id 3 只命中“跨组”界面接触；浆液专用强度弱于岩石（占位值，需标定）。含 rgap 保证界面相切接触可胶结。
+contact cmat add  3 model linearpbond ...
+    method deform emod [emod_grout] kratio [kratio_grout] ...
+    pb_deform emod [pb_emod_grout] kratio [pb_kratio_grout] ...
+    property pb_ten [pb_ten_grout] pb_coh [pb_coh_grout] pb_fa [pb_fa_grout] lin_mode 1  ...
+    range fish @is_grout
+
+; ---------- 1) 仅对界面接触按新 CMAT 重套用（赋为 id 3 的 linearpbond，未胶结）----------
+;   rock-rock(id 1) / anchor-anchor(id 2) 模型与既有胶结保持不动；仅界面接触被重赋为 id 3。
+;   用范围限制为 is_grout，避免对“已胶结的岩石/锚杆内部接触”重套用（保险，不扰动既有胶结）。
+contact cmat apply range fish @is_grout
+
+; ---------- 2) 清零接触力/颗粒合力 + 清速度（与 03/04 同法）----------
+contact property lin_force 0 0 0
+ball attribute force-contact multiply 0 moment-contact multiply 0
+model calm
+model cycle 1
+
+; ---------- 3) 仅对“锚杆-岩石”界面施胶（浆液粘结），不重复胶结已胶结的岩石/锚杆内部 ----------
+;   bond_gap_grout 取岩石最低粒径量级，桥接界面间隙；range 直接用 range fish @is_grout（contact 命令默认范围即 contact）。
+contact method bond gap [bond_gap_grout] range fish @is_grout
+model cycle 1
+
+; ---------- 4) 重新平衡 ----------
+model solve
+
+; ---------- 5) 保存结果 ----------
+model save 'sample_grout'
+
+; ========== 说明 ==========
+; 本步通过 range fish 精确界定“两端分属 shiyang 与 anchor_ball”的界面接触(id 3)，
+;   直接施胶(线性平行粘结，浆液专用强度弱于岩石)模拟浆液把锚杆与围岩粘结成整体。
+;   - 未引入新颗粒；仅新增“跨组”界面的胶结，符合“浆液粘结”的物理含义。
+;   - 相比之前的“match 2 + id 3 兜底 + Fish 打标 group”方案，range fish 更直接、可读、
+;     无“cmat apply 重建接触导致组标记丢失”的脆弱性；cmat apply / method bond 全部复用同一 is_grout 判定。
+;   - 若需改为“纯水泥石粘结(不传弯矩)”，把 id 3 的 model 由 linearpbond 改为 linearcbond 即可。
+;   下一步（第七步起）：可重新施加拉拔(05 思路，基于 sample_grout)检验带浆液的锚固性能、提取拉拔力-位移曲线、参数扫描。

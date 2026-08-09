@@ -1,0 +1,65 @@
+; ============================================================
+; 步骤三：胶结（linearpbond 平行粘结）形成坚硬岩石
+;   - 先 model restore 'sample_anchored'（上一步结果）
+;   - 定义接触(CMAT) → contact cmat apply 重定义所有接触
+;     → 清零接触力/颗粒力 → model calm 清零速度
+;     → contact method bond gap → 求解
+;   - 完成后 model save 'sample_bonded'（胶结单独 sat 文件）
+; ============================================================
+
+model restore 'sample_anchored'
+
+; ---------- 胶结参数 ----------
+[emod_lin   = 1.0e8]   ; 线性部分有效模量 emod（占位值，需标定）
+[kratio_lin = 1.0]     ; 线性部分刚度比 kratio（ks = kratio*kn）
+[pb_emod    = 1.0e8]   ; 平行粘结有效模量 emod（胶结刚度由 pb_deform 计算）
+[pb_kratio  = 1.0]     ; 平行粘结刚度比 kratio
+[pb_ten     = 1.0e6]   ; 平行粘结抗拉强度（占位值，需标定）
+[pb_coh     = 1.0e6]   ; 平行粘结内聚强度（占位值，需标定）
+[pb_fa      = 30.0]    ; 平行粘结摩擦角（度）
+[bond_gap   =  radius_min]    ; 胶结间隙：一般取最低颗粒粒径，可桥接微小间隙
+[rgap       =  1.0e-5]    ; 参考间隙(极小正值)：使“相切/紧挨”的颗粒接触也能稳定激活并成功胶结（gap≈0 时浮点误差可能致接触激活失败、bond 失效）
+
+; ---------- 0) 重新定义 CMAT（用 cmat add 按“颗粒组”分别给试样/锚杆接触；直接 `range group` 界定）----------
+; ⚠️ 规范：用 `contact cmat add <id> ... range group '<组>'` 直接以颗粒组界定接触模型；
+;    `type` 关键字与 `range group` 不能在同一 cmat add 条目里混用（即不要 `type ball-ball` 又 `range group 'X'`）。
+;    本项目：试样 shiyang → cmat add id 1；锚杆 anchor_ball → id 2（在 04 定义）；球-墙(ball-facet) → cmat default type。
+; 球-墙(ball-facet) → linear，有效模量取球-球 3 倍（墙体不参与胶结）；用 cmat default type 指定
+[emod_facet_b   = 3.0 * emod_lin]
+[kratio_facet_b = kratio_lin]
+contact cmat default type ball-facet model linear method deform emod [emod_facet_b] kratio [kratio_facet_b] property lin_mode 1
+
+
+; 试样(shiyang)球-球：cmat add id 1，用 range group 'shiyang' match 2 界定“两端都属于 shiyang 组”的接触（试样内）。
+;   match 2 = 两端都命中该组；组内接触用 match 2 即可，无需自定义 fish 范围（比 range fish 更简洁）。
+;   - method deform / pb_deform：刚度由 emod/kratio 自动求 kn/ks、pb_kn/pb_ks
+;   - property：强度 pb_ten/pb_coh/pb_fa；lin_mode 1（增量模型）；rgap（参考间隙，保证相切颗粒可胶结）
+contact cmat add  1 model linearpbond ...
+    method deform emod [emod_lin] kratio [kratio_lin] ...
+    pb_deform emod [pb_emod] kratio [pb_kratio] ...
+    property pb_ten [pb_ten] pb_coh [pb_coh] pb_fa [pb_fa] lin_mode 1 ...
+    range group 'shiyang' match 2
+
+; ---------- 1) 按新 CMAT 对所有已存在接触重定义（替代逐条 contact model ... range）----------
+; contact cmat apply 会把 CMAT 统一应用到所有现存接触：
+;   岩石(shiyang)球-球 → linearpbond；球-墙(ball-facet) → linear(3倍)
+contact cmat apply
+
+; ---------- 2) 清零接触力与颗粒力 ----------
+; 接触线性力清零（注意：不是 contact reset forces）
+contact property lin_force 0 0 0
+; 颗粒合力清零（同时清掉接触与颗粒上的残余力）
+ball attribute force-contact multiply 0 moment-contact multiply 0
+
+; ---------- 3) 清零速度（直接用 model calm，而非 ball initialize velocity）----------
+model calm
+
+; ---------- 4) 施加胶结（对球-球接触）----------
+contact method bond gap [bond_gap] range contact type 'ball-ball'
+
+; ---------- 5) 让胶结生效并求解平衡 ----------
+model cycle 1
+model solve
+
+; ---------- 6) 保存胶结结果（单独 sat 文件）----------
+model save 'sample_bonded'

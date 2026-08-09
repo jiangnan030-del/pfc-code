@@ -1,0 +1,123 @@
+; ============================================================
+; 步骤四：生成锚杆颗粒（一行球，沿圆柱轴线）
+;   - 先 model restore 'sample_bonded'（上一步：已胶结的岩石 + 圆柱锚杆 wall）
+;   - 用 Fish 沿 x 轴批量生成一行锚杆颗粒（粒径 = 0.8×圆柱 wall 半径，避免与试样颗粒重叠）
+;   - 删除圆柱墙体 + 锚杆这一侧(+x)的边界墙体（01 已把边界建成 6 个独立命名墙体，02 圆柱墙也命了名，故 04 直接按 name 删除）
+;   - 平衡前先把锚杆颗粒彼此胶结成刚性杆体（仅锚杆-锚杆，不胶结锚杆-岩石界面），再 model save 'sample_anchor'
+; ============================================================
+
+model restore 'sample_bonded'
+
+; ---------- 锚杆颗粒参数（Fish 变量，集中定义）----------
+[anchor_r_wall  = 2.0]                    ; 圆柱锚杆 wall 半径（与 02_add_anchor.dat 一致）
+[anchor_radius  = 0.8 * anchor_r_wall]    ; 锚杆颗粒半径 = 0.8 × 墙半径（避免与试样颗粒重叠）
+[anchor_x0      = -20.0]                   ; 圆柱最左端 x（锚固端，= anchor_base）
+[anchor_x1      =  30.0]                   ; 圆柱最右端 x（拉拔端，= anchor_base + height）
+[anchor_spacing = 2.0 * anchor_radius]     ; x 递增距离 = 锚杆颗粒直径（相邻颗粒相切）
+[anchor_y       = 0.0]                     ; 整行颗粒 y 相同
+[anchor_z       = 0.0]                     ; 整行颗粒 z 相同（沿 x 轴一行）
+[density_anchor = 2650]                    ; 锚杆颗粒密度（占位值，可调；锚杆一般为钢，可改大）
+; 锚杆专用平行粘结强度（占位值，可独立标定）
+[pb_ten_anchor  = 1.0e6]
+[pb_coh_anchor  = 1.0e6]
+[pb_fa_anchor   = 30.0]
+[bond_gap_anchor = anchor_radius]          ; 锚杆颗粒相切(gap≈0)，给锚杆半径量级的胶结间隙，确保相邻颗粒成功胶结
+; 注：rgap(参考间隙) 已在 03 的 CMAT ball-ball linearpbond 中定义(1e-5)，restore 后生效，本步不再重复。
+; 引用/复刻 03 的刚度占位值（restore 一般带回 fish 变量，此处显式定义以防万一）
+[emod_lin    = 1.0e8]
+[kratio_lin  = 1.0]
+[pb_emod     = 1.0e8]
+[pb_kratio   = 1.0]
+[rgap        = 1.0e-5]    ; 参考间隙(极小正值)：保证相切/紧挨颗粒接触稳定激活、可胶结（与 03 一致）
+
+; ---------- 锚杆颗粒专用 CMAT（cmat add id 2）----------
+; 接触模型必须由 CMAT 定义（不能仅靠 contact property）；多个 CMAT 用 add id 区分。
+; 锚杆内接触用 range group 'anchor_ball' match 2 界定（两端都属于 anchor_ball 组的球-球接触）。
+;   match 2 = 两端都命中该组；组内接触用 match 2 即可，无需自定义 fish 范围。
+; 锚杆不接触墙体（位于岩心孔内、拉拔端外也无墙），故该条目只命中球-球接触。
+; rgap(参考间隙) 同样给极小正值，保证相切锚杆颗粒接触稳定激活、可胶结。
+contact cmat add 2 model linearpbond ...
+    method deform emod [emod_lin] kratio [kratio_lin] ...
+    pb_deform emod [pb_emod] kratio [pb_kratio] ...
+    property pb_ten [pb_ten_anchor] pb_coh [pb_coh_anchor] pb_fa [pb_fa_anchor] lin_mode 1 ...
+    range group 'anchor_ball' match 2
+
+; 球-球兜底默认(linear，不胶结)：锚杆-岩石界面接触（id 1 = shiyang(match 2)、id 2 = anchor_ball(match 2) 都只命中“组内”接触，
+;   故锚杆-岩石“跨组”接触会被两者漏掉，落到此默认 → 线性接触，保证锚杆与岩石可传力、可滑动；
+;   第6步用 range fish @is_grout 精确选中该界面接触并胶结为浆液粘结）
+contact cmat default type ball-ball model linear method deform emod [emod_lin] kratio [kratio_lin]
+
+; ---------- Fish：沿 x 轴批量生成一行锚杆颗粒 ----------
+; 第一个颗粒圆心 = 圆柱最左端 + 0.2×R + 1×R；之后每个 x 递增一个直径，直至超过圆柱范围为止。
+; 同时记录首尾两颗粒的 id：
+;   anchor_id_anchor —— 首颗粒(岩内锚固端 x0 侧) = 锚固颗粒，后续用于固定/约束
+;   anchor_id_pull   —— 尾颗粒(自由拉拔端 x1 侧) = 拉拔颗粒，后续用于施加拉拔速度/力
+fish define make_anchor_balls
+    local rad = anchor_radius
+    local x0  = anchor_x0
+    local x1  = anchor_x1
+    local dx  = anchor_spacing
+    local x   = x0 + 0.2*rad + rad          ; 第一个颗粒圆心
+    local yy  = anchor_y
+    local zz  = anchor_z
+    local id  = 900001                      ; 起始 id，避免与试样颗粒冲突
+    global anchor_id_anchor = id            ; 首颗粒 id = 锚固颗粒（岩内锚固端 x0 侧）
+    loop while x <= x1
+        command
+            ball create id [id] radius [rad] position [x] [yy] [zz] group 'anchor_ball'
+        end_command
+        global anchor_id_pull = id          ; 尾颗粒 id = 拉拔颗粒（自由拉拔端 x1 侧），循环逐次更新为最后一个
+        id = id + 1
+        x  = x + dx
+    end_loop
+    ; 打印首尾颗粒 id，便于核对与第五步引用
+    io.out('锚杆颗粒首(锚固)='+string(anchor_id_anchor)+'  尾(拉拔)='+string(anchor_id_pull))
+end
+@make_anchor_balls
+
+; 给锚杆颗粒赋密度（占位值）
+ball attribute density [density_anchor] range group 'anchor_ball'
+
+; ---------- 删除圆柱墙体 + 锚杆这一侧(+x)的边界墙体（纯删除，不重建）----------
+; wall delete 默认删除的是 facet；要删除墙体本身，必须带 walls 关键字。
+; 02 的圆柱墙已命名为 'anchor'，01 的 +x 边界已命名为 'face_xp'，故可直接按 name 删除：
+;   - 删圆柱墙（name 'anchor'）
+;   - 删 +x 面（name 'face_xp'），使锚杆拉拔端(x>25)可自由穿出
+; 其余 5 面（face_xn/yn/yp/zn/zp）保留，继续约束岩石试样。
+wall delete walls range name 'anchor'
+wall delete walls range name 'face_xp'
+
+; ---------- 锚杆颗粒内部胶结（刚性杆体）----------
+; 仅胶结“锚杆-锚杆”接触，不胶结“锚杆-岩石”界面（界面保持线性接触，可传力但不粘连）。
+; 用 range group 'anchor_ball' match 2 精确界定“两端都属于 anchor_ball 组”的球-球接触；
+;   match 2 = 两端都命中该组，组内接触用 match 2 即可，无需自定义 fish 范围，也更简洁。
+; cmat apply 与 method bond 都直接用 range group 'anchor_ball' match 2。
+
+; 锚杆-锚杆接触在生成时已按本步的 `cmat add id 2`（`range group 'anchor_ball' match 2`，含极小参考间隙 rgap 与
+; 锚杆专用强度 pb_ten_anchor/pb_coh_anchor/pb_fa_anchor）赋为 linearpbond；模型/刚度/强度/rgap 统一由 CMAT
+; （id 2）定义（符合 cmat add 规范，不靠 contact property 定义）。此处把 CMAT 重新套用到这组接触（保险）：
+contact cmat apply range group 'anchor_ball' match 2
+
+; 清零残余接触力/颗粒合力 + 清速度，避免施胶瞬间力突变（与 03 同法）
+contact property lin_force 0 0 0
+ball attribute force-contact multiply 0 moment-contact multiply 0
+model calm
+model cycle 1
+model clean
+; 施胶：仅锚杆-锚杆（bond_gap_anchor = 锚杆半径量级，确保相邻相切颗粒成功胶结）
+contact method bond gap [bond_gap_anchor*0.1] range group 'anchor_ball' match 2
+model cycle 1
+
+; ---------- 重新平衡 ----------
+model solve
+
+; ---------- 保存本步结果 ----------
+model save 'sample_anchor'
+
+; ========== 说明 ==========
+; 本步已将锚杆颗粒彼此胶结成刚性杆体（linearpbond，仅锚杆-锚杆，锚杆-岩石界面保持线性不粘连）。
+; 锚杆专用胶结强度 pb_ten_anchor/pb_coh_anchor/pb_fa_anchor 为占位值，可按刚性杆需求独立标定。
+; 首尾两颗粒 id 已记录为全局 Fish 变量：
+;   anchor_id_anchor —— 锚固颗粒（首颗粒，岩内锚固端 x0 侧），第五步用于固定/约束
+;   anchor_id_pull   —— 拉拔颗粒（尾颗粒，自由拉拔端 x1 侧），第五步用于施加拉拔速度/力
+; 下一步（第五步）：施加预应力（锚杆颗粒位移 servo）、上下盘剪切加载、监测拉拔力-位移。

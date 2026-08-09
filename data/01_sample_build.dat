@@ -1,0 +1,67 @@
+; ============================================================
+; 步骤一：成样与平衡（立方体岩石试样 50×50×50）
+;   - 建边界墙 → 按孔隙率生成颗粒 → 去初速度
+;     → 删盒外颗粒 → 求解平衡
+;   - 完成后 model save 'sample_built'（本步结果文件）
+;   - 下一步（02_add_anchor.dat）首先 model restore 'sample_built'
+; ============================================================
+
+model new
+model domain extent -25 25          ; 临时域：让平面墙截断在试样边界 ±25（随后扩大以容纳锚杆拉拔端）
+
+; ---------- Fish 参数（集中定义，便于批量修改）----------
+[sample_half = 25.0]      ; 试样半边长 → 试样范围 x/y/z ∈ [-25, 25]
+[radius_min = 2.0]      ; 颗粒最小半径
+[radius_max = 3.0]      ; 颗粒最大半径
+[porosity    =  0.3]      ; 目标孔隙率（默认 0.3）
+[density     = 2650]    ; 颗粒密度 kg/m^3
+[emod_lin    = 1.0e8]     ; 颗粒-颗粒 有效模量 emod（占位值，需标定）
+[kratio_lin  = 1.0]       ; 法向/切向刚度比 kratio（ks = kratio*kn）
+[emod_facet  = 3.0 * emod_lin]  ; 颗粒-墙体(ball-facet) 有效模量 = 颗粒间 ×3（墙刚度取 3 倍）
+[kratio_facet= 1.0]       ; 颗粒-墙体 刚度比（取同值）
+
+; ---------- 1) 生成试样边界墙（6 个独立命名平面，便于后续单独删除某一面）----------
+; wall generate plane 关键字：position <点> + dip <倾角> + dip-direction <方位角>（非 origin/normal）
+;   各面截断于 domain ±25 → 即试样边界；法线指向域内（z 面 dip=0 法线 +z，墙-球接触双面生效，约束可靠）
+;   name/group 是 wall generate 的主关键字，必须放在 plane/cylinder 等形状关键字之前。
+wall generate name 'face_xn' plane position (-25, 0, 0) dip 90 dip-direction  90
+wall generate name 'face_xp' plane position ( 25, 0, 0) dip 90 dip-direction 270
+wall generate name 'face_yn' plane position ( 0,-25, 0) dip 90 dip-direction   0
+wall generate name 'face_yp' plane position ( 0, 25, 0) dip 90 dip-direction 180
+wall generate name 'face_zn' plane position ( 0, 0,-25) dip  0 dip-direction   0
+wall generate name 'face_zp' plane position ( 0, 0, 25) dip  0 dip-direction   0
+
+; 扩大模型域，容纳锚杆拉拔端(x=30)及后续加载（已生成平面墙几何不变，仍位于 ±25）
+model domain extent -40 40
+
+; ---------- 2) 默认接触模型：成样阶段用 linear，不给 fric ----------
+; 区分 ball-ball 与 ball-facet（球-墙）；用 method deform 以 emod/kratio 定义刚度
+;   - kn/ks 与 emod/kratio 数学等价（emod/kratio 由接触局部几何自动求 kn/ks），二者只需定义其一
+;   - 颗粒-墙体有效模量取颗粒间 3 倍（墙刚度取 3 倍，见第 9 节）
+;   - 成样阶段不加 lin_mode 1（增量模型 lin_mode 1 仅在胶结阶段启用）
+contact cmat default type ball-ball model linear method deform emod [emod_lin] kratio [kratio_lin]
+contact cmat default type ball-facet model linear method deform emod [emod_facet] kratio [kratio_facet]
+
+; ---------- 3) 按指定孔隙率 + 粒径分布生成颗粒 ----------
+model random 10001
+ball distribute porosity [porosity] radius [radius_min] [radius_max] box [-sample_half] [sample_half]
+ball attribute density [density]
+
+; 将原（岩石）颗粒统一分组为 'shiyang'，供后续 CMAT(id 1) 与胶结范围识别
+ball group 'shiyang'
+
+; ---------- 4) 去除生成时大重叠产生的过大速度 ----------
+model cycle 2000 calm 50
+
+; ---------- 5) 删除边界墙（盒）以外的颗粒 ----------
+; range 中没有 box 关键字，只能分别在 x/y/z 三维用 pos-? + not 删除：
+; 任一分量落在 [-half, half] 之外即删除（三条命令并列，等效“盒外”）。
+ball delete range pos-x [-sample_half] [sample_half] not
+ball delete range pos-y [-sample_half] [sample_half] not
+ball delete range pos-z [-sample_half] [sample_half] not
+
+; ---------- 6) 求解到力学平衡 ----------
+model solve
+
+; ---------- 7) 保存本步结果文件 ----------
+model save 'sample_built'

@@ -1,0 +1,41 @@
+; ============================================================
+; 步骤七：解除颗粒约束并重新平衡
+;   - model restore 'sample_grout'（上一步：锚杆-岩石界面已通过浆液平行粘结胶结为整体，
+;       sample_grout 保存了完整的胶结岩体 + 锚杆 + 界面）
+;   - 用 `ball free` 解除颗粒约束：释放此前被 `ball fix velocity/spin` 固定的颗粒
+;     （主要是第五步固定的锚固颗粒 anchor_id_anchor）的速度/自转自由度，使其恢复自由。
+;     若某 ball 此前未被 fix，则 ball free 为安全无操作，不影响其余颗粒。
+;   - （可选）若上一步对拉拔颗粒施加了外加力(force-applied-x)，一并清零，使系统回到无外加力状态。
+;   - model solve 重新平衡，使已锚固于岩体(界面胶结)的锚杆在边界墙约束下达到自然平衡。
+;   - model save 'sample_freed'
+; ============================================================
+
+model restore 'sample_grout'
+
+; ---------- 解除颗粒约束（ball free）----------
+; ball free velocity：释放所有颗粒的平动速度固定自由度（覆盖第五步 ball fix velocity 固定的锚固颗粒）
+; ball free spin   ：释放所有颗粒的自转固定自由度
+; 不加 range → 作用于全体颗粒；边界约束由 6 面墙体提供，不依赖固定颗粒，故释放全体安全。
+ball free velocity
+ball free spin
+
+; ---------- 解除外加力约束，使系统回到无外加力状态后再平衡 ----------
+; 因 06 建立在 sample_pullout 之上，sample_grout 仍携带第五步对拉拔颗粒(anchor_id_pull)施加的
+; force-applied-x 向外力；本步一并清零，锚杆才真正“解除全部约束”、可自由重新平衡。
+ball attribute force-applied 0 0 0
+
+; ---------- 重新平衡 ----------
+; ratio-average：平均不平衡力比收敛准则（Fish 变量集中定义，便于调参/扫描）
+[free_ratio = 1e-3]
+model solve ratio-average [free_ratio]
+
+; ---------- 保存结果 ----------
+model save 'sample_freed'
+
+; ========== 说明 ==========
+; 本步在“带浆液的完整锚固系统(sample_grout)”基础上，解除颗粒约束并重新平衡：
+;   - `ball free velocity/spin` 释放此前被固定的颗粒（锚固颗粒等），使其在既有边界墙约束下自由响应；
+;   - 重新 model solve 达到准静态平衡，得到无刚体固定约束下的自然平衡状态 sample_freed；
+;   - 为后续加载（预应力触发、上下盘剪切、拉拔/抗拔曲线提取）提供干净的初始状态。
+; 注：本步已承接“带浆液的完整锚固系统(sample_grout)”，并同时解除 ball fix 固定与外加力，
+;     得到无约束自然平衡状态 sample_freed，为后续加载（预应力触发、上下盘剪切、拉拔/抗拔曲线提取）提供干净初始状态。

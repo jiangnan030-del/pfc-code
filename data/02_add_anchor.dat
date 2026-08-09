@@ -1,0 +1,43 @@
+; ============================================================
+; 步骤二：加入锚杆（圆柱 wall）+ 删除圆柱范围内颗粒
+;   - 先 model restore 'sample_built'（上一步结果）
+;   - 生成圆柱锚杆 wall → 删圆柱内颗粒 → 求解平衡
+;   - 完成后 model save 'sample_anchored'（本步结果文件）
+;   - 下一步（03_bond.dat）首先 model restore 'sample_anchored'
+; ============================================================
+
+model restore 'sample_built'
+
+; ---------- 锚杆参数 ----------
+[anchor_x_start = -20.0]                       ; 锚固端 x（岩石内部）
+[anchor_x_end   =  30.0]                       ; 拉拔端 x（伸出岩石）
+[anchor_radius  =   2.0]                        ; 锚杆半径
+[anchor_axis    = vector(1.0,0.0,0.0)]          ; 沿 +x 轴
+[anchor_base=vector(anchor_x_start,0.0,0.0)]
+[anchor_end     = vector(anchor_x_end,0.0,0.0)]
+[anchor_height  = anchor_x_end - anchor_x_start]   ; = 50
+
+; ---------- 1) 生成圆柱锚杆 wall（含端部端盖，cap true）----------
+; 该 wall 贴合“要挖掉的锚杆孔”边界，代表删除区域。
+; name 'anchor' + one-wall：让所有侧面与两端端盖同属一个墙体，便于 04 按 name 删除；
+; group 'anchor' 赋给 facet（contact 范围可按 group 选），name 赋给 wall（删除可按 name 选）。
+; ⚠️ 必须保留端盖（cap true，默认即两端盖都生成）：若 cap false，圆柱两端开口，
+;    02/03 平衡时段部邻近颗粒会沿轴线漏进空腔（圆柱体），破坏预留的锚杆孔。
+wall generate name 'anchor' group 'anchor' cylinder ...
+    base [anchor_base] axis [anchor_axis] height [anchor_height] ...
+    radius [anchor_radius] cap true one-wall
+
+; ---------- 2) cycle+calm 去除插入 wall 造成的初始重叠 ----------
+; 新插入的圆柱 wall 会与周边颗粒发生初始重叠，产生异常大的速度/力，
+; 先 cycle 2000 calm 50 清零初始重叠速度、初步松弛后再删颗粒
+model cycle 2000 calm 50
+
+; ---------- 3) 删除圆柱范围内的颗粒，预留锚杆位置 ----------
+; 注意：range 用 end-1/end-2/radius，与 wall generate 的关键字不同
+ball delete range cylinder end-1 [anchor_base] end-2 [anchor_end] radius [anchor_radius]
+
+; ---------- 4) 求解平衡（锚杆加入后）----------
+model solve
+
+; ---------- 5) 保存本步结果文件 ----------
+model save 'sample_anchored'
