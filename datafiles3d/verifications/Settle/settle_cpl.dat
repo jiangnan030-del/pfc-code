@@ -1,0 +1,114 @@
+model new
+model configure dynamic
+model largestrain on
+
+[rho    = 2700.0 ]
+[emod   = 75.0e9 ]
+[nu     = 0.25]
+[mmod   = emod*(1-nu)/((1+nu)*(1-2.0*nu))]
+
+[l  = 1.0]
+[nb = 5]
+
+[rad  = l/(2.0*nb)]
+[rhob = 6.0/math.pi*rho]
+
+[nh   =  10]
+[nw   =  1]
+[npfc =  2]
+[ncpl =  3]
+[h    = nh*l]
+[nf3d =  nh - (npfc+ncpl)]
+
+[lsub  = nzh*hz]
+[hmin  = 0.]
+[hpfc = hmin +  nf3d      *l]
+[hf3d = hmin + (nf3d+ncpl)*l]
+[nf = int(hf3d/l)]
+
+[epsilon = 1.0e-3]
+
+
+zone create brick size  @nw @nw @nf	point 0  0   0 	 @hmin ...
+                                    point 1  @l  0 	 @hmin ...
+                                    point 2  0	 @l	 @hmin ...
+                                    point 3  0	 0	 @hf3d
+
+zone create brick size  @nw @nw @nh  	point 0  [2.0*l] 0. @hmin ...
+										point 1  [3.0*l] 0. @hmin ...
+										point 2  [2.0*l] @l	@hmin ...
+										point 3  [2.0*l] 0.	@h
+                                            
+zone cmodel assign elastic
+zone property young @emod poisson @nu
+zone initialize density @rho
+model cycle 0 ; to initialize gp masses
+
+model range create 'bottom' position-z [hmin-0.01*l] [hmin+0.01*l]
+zone face group 'bottom' range named-range 'bottom'
+zone gridpoint fix velocity range named-range 'bottom'
+zone gridpoint fix velocity-x 
+zone gridpoint fix velocity-y
+
+;
+model domain extent [-4.0*l] [4.0*l] [-2.0*l] [2.0*l] [hmin-5.0*rad] [h+5.0*rad]
+ball generate cubic radius [rad] box [rad] [l-rad] [rad] [l-rad]  [hpfc+rad] [h-rad]
+
+ball generate cubic radius [rad] box [-2.0*l+rad] [-l-rad] [rad] [l-rad]  [hmin+rad] [h-rad]
+ball fix velocity range position-z [hmin] [hmin+2.0*rad]
+ball fix velocity-x velocity-y 
+
+ball attribute density [rhob]
+contact cmat default model linearpbond ...
+                    method pb_deformability emod [4.0/math.pi*mmod] kratio 1.0 ...
+                    property pb_ten 1e20 pb_coh 1e20
+
+
+model clean
+contact method bond gap 0.01
+
+model gravity (0,0,-9.81)
+zone dynamic damping local 0.1
+zone mechanical damping local 0.1
+ball attribute damp 0.1
+
+ball-zone create
+
+fish define setMassFactors(eps)
+  loop foreach local cb ball.zone.ball.list
+    local b = ball.zone.ball.ball(cb)
+    local bzpos = ball.pos.z(b)
+    ball.extra(b,1) = (1.0-2.0*eps)*(hpfc - bzpos)/(hpfc-hf3d) + eps
+    ball.zone.ball.mass.factor(cb) = ball.extra(b,1) 
+  endloop
+  loop foreach local cgp ball.zone.gp.list
+    local gp     = ball.zone.gp.gp(cgp)
+    local gpzpos = gp.pos.z(gp)
+    gp.extra(gp,1) = (1.0-2.0*eps)*(hf3d - gpzpos)/(hf3d - hpfc) + eps
+    ball.zone.gp.mass.factor(cgp) = gp.extra(gp,1)
+  endloop
+end
+@setMassFactors(@epsilon)
+
+
+history interval 1
+model history name '1' mechanical time-total
+model history name '2' mechanical ratio-average
+zone history name '11' displacement-z position ([2.0*l],0.0,[h]) 
+ball history name '12' displacement-z position (0.0,0.0,[h])      
+ball history name '14' displacement-z position ([-2.0*l],0.0,[h])
+
+zone history name '21' displacement-z position ([2.0*l],0.0,[hpfc])  
+ball history name '22' displacement-z position (0.0,0.0,[hpfc])
+zone history name '23' displacement-z position (0.0,0.0,[hpfc])
+ball history name '24' displacement-z position ([-2.0*l],0.0,[hpfc])
+
+zone history name '31' displacement-z position ([2.0*l],0.0,[hf3d])  
+ball history name '32' displacement-z position (0.0,0.0,[hf3d])
+zone history name '33' displacement-z position (0.0,0.0,[hf3d])
+ball history name '34' displacement-z position ([-2.0*l],0.0,[hf3d])
+
+model save 'settle_cpl-ini'
+model solve ratio-average 5e-3
+model save 'settle_cpl-final'
+return

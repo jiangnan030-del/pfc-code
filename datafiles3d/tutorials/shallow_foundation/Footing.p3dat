@@ -1,0 +1,77 @@
+; fname: Footing.p3dat
+;
+;  Create a balls assembly and install a shallow foundation
+;==============================================================================
+
+model new
+
+;Set the domain extent and condition
+model domain extent (-1,25) (-6,6) (-6,20)
+model domain condition destroy
+
+;generate a box and a cloud of 2000 equally sized balls
+wall generate box (0,24) (-5,5) (0,17)
+model random 10001
+ball generate box (0,24) (-5,5) (0,10) number 2000 radius 0.40   
+
+; Modify the default slots of the Contact Model Assignement Table
+; Here we choose the linear contact model (with kn=1e8) for all contact types
+; but ball-ball contacts, to which we assign the linearpbond model. Note that
+; only the linear part of the linearpbond model is activated as long as the 
+; contact method bond is not called, which is done later
+contact cmat default type ball-ball model linearpbond ...
+        property fric 0.577 kn 1e8 ks 1e8             ...
+        pb_kn 1e8 pb_ks 1e8 pb_ten 1e6                ...
+        pb_coh 1e6 pb_rmul 0.8 dp_nratio 0.2
+
+contact cmat default type ball-facet model linear     ...
+        property fric 0.09 kn 1e8 ks 1e8              ...
+        dp_nratio 0.2
+
+;define the density and increase their radii
+ball attribute density 2000 radius multiply 1.4
+
+;define some history to plot the velocity of a ball of the assembly and 
+;of the unbalanced force. Histories are stored each 5 cycles.
+history interval 5
+ball history velocity-z position 12 0 5
+model history mechanical unbalanced-maximum
+
+; To reach a stable configuration faster, density scaling is activated.
+; Gravity is introduced
+model mechanical timestep scale
+model gravity 0 0 -9.81
+model cycle 1000 calm 50
+model solve ratio-average 1e-5
+
+; creation of a box-shaped foundation
+; the name 'footing' is associated to the respective group of walls
+wall delete range set id 2
+wall generate group 'footing' box (0,5) (-5,5) (12,20) 
+
+
+; parallel bonds are finally installed. LinearPBond model is active
+; for ball-ball contacts. The simulation is saved at this stage
+; so that further restoring is possible
+contact method bond gap 0.0
+
+model save 'Assembly'
+
+; The foundation is supposed to settle with a constant velocity
+; The contact force at the foundation's base is stored during the simulation
+wall attribute velocity-z -0.25 range group 'footing'
+history wall force-contact-z id 7
+
+; The timestep is set to its automatic value for dynamic simulations and an
+; additional 5 seconds are simulated. The model is saved at the end.
+model mechanical timestep auto
+model solve time 10.0
+
+; Solve to an equilibrium state again
+wall attribute velocity-z 0.0
+model solve ratio-average 1e-5
+
+model save 'Footing'
+
+;==============================================================================
+; eof: Footing.p3dat

@@ -1,0 +1,66 @@
+; Clear the model state 
+model new
+; Set the random seed for reproducibility
+model random 10001
+
+; Set the model domain and destroy any rigid blocks that fly out of the domain
+model domain extent -1100 1100 -1100 1100 -300 800 condition destroy 
+
+; Set the linear model with some normal viscous damping and low friction
+contact cmat default model linear method deformability emod 1e8 kratio 2.5  ...
+                                property fric 0.3 dp_nratio 0.5 dp_mode 1 ...
+                                lin_mode 1
+
+;Import the mountain as a wall
+geometry import 'slide_mountain.stl'
+wall import from-geometry 'slide_mountain' skip-errors
+
+;Add a box around the rigid blocks for settling
+wall generate name 'box' box (-720,-660) (818,880) (630,668) one-wall
+
+; Import the stl files of the rigid blocks 
+geometry import 'comp1.stl'
+geometry import 'comp2.stl'
+geometry import 'comp3.stl'
+geometry import 'comp4.stl'
+geometry import 'comp5.stl'
+geometry import 'comp6.stl'
+
+; Create the rigid blocks and round them. The rounding is introduced to 
+; both reduce the computational time and to make the edges of the block
+; less angular
+rblock template create 'comp1' from-geometry 'comp1' round relative 0.1
+rblock template create 'comp2' from-geometry 'comp2' round relative 0.1
+rblock template create 'comp3' from-geometry 'comp3' round relative 0.1
+rblock template create 'comp4' from-geometry 'comp4' round relative 0.1
+rblock template create 'comp5' from-geometry 'comp5' round relative 0.1
+rblock template create 'comp6' from-geometry 'comp6' round relative 0.1
+
+; Generate non-overlapping rigid blocks in a box and above the surface
+rblock generate number 2000 size 0.25 2.5 ...
+                            box (-720,-660) (818,880) (630,668) ... 
+                            range plane origin (-677.244,828.895,644.82) ...
+                            normal (0.220853,-0.560137,0.798418) above
+                            
+                         
+; Set gravity
+model gravity 0 0 -10
+
+; Set the density and add local damping
+rblock attribute density 2750.0 damp 0.7
+
+; Activate timestep scaling where the timestep is 1 and the masses and
+; velocities of the rigid blocks are scaled so they have the same time response
+model mechanical timestep scale
+
+; Cycle so that the rigid blocks are densely packed
+model cycle 3000
+
+; Go back to automatic timestep scaling
+model mechanical timestep auto
+
+; Solve to a target average ratio cleaning velocities periodically
+model solve ratio-average 5e-2 calm 1000
+
+; Save the settled rigid blocks
+model save 'settle'

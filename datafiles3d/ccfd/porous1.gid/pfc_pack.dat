@@ -1,0 +1,61 @@
+set echo off
+set notice off
+set warning off
+
+new
+fish define numbers
+  minx = -2.5e-2
+  maxx = 2.5e-2
+  miny = -5.0e-2
+  maxy = 5e-2
+  minz = -2.5e-2
+  maxz = 2.5e-2
+  nx = 5
+  ny = 10
+  nz = 5
+  nb = 4
+end
+numbers
+
+fish define pack
+  dx=(maxx-minx)/float(nx)
+  dy=(maxy-miny)/float(ny)
+  dz=(maxz-minz)/float(nz)
+  rad_ = dx/float(2*nb)
+
+  loop i(1,nx)
+  loop j(1,ny)
+  loop k(1,nz)
+    x0_=minx+(i-1)*dx
+    y0_=miny+(j-1)*dy
+    z0_=minz+(k-1)*dz
+    loop ii (1,nb)
+    loop jj (1,nb)
+    loop kk (1,nb)
+      x_= x0_ + rad_ + (ii-1)*2*rad_
+      y_= y0_ + rad_ + (jj-1)*2*rad_
+      z_= z0_ + rad_ + (kk-1)*2*rad_
+      command
+        ball rad rad_ x x_ y y_ z z_
+      end_command
+    end_loop
+    end_loop
+    end_loop
+  end_loop
+  end_loop
+  end_loop
+
+  vol=(maxz-minz)*(maxy-miny)*(maxx-minx)
+  bvol = nx*ny*nz*nb^3*4./3.*rad_^3*pi
+  porosity=(vol-bvol)/float(vol)
+  oo=out(String(vol))
+  oo=out(String(bvol))
+  oo=out(String(porosity))
+end
+pack
+
+set echo on
+set notice on
+set warning on
+
+sav pack.sav

@@ -1,0 +1,106 @@
+model new
+model configure dynamic
+model largestrain on
+
+[wfreq  = 1.0   ] ; pulse frequency [1/s]
+[wpeak  = 1.0   ] ; pulse peak velocity [m/s]
+[rho    = 2700.0 ]
+[emod   = 75.0e9 ]
+[nu     = 0.25]
+[kappa  = 15.0]
+[mmod   = emod*(1-nu)/((1+nu)*(1-2.0*nu))
+[cp     = math.sqrt(mmod/rho)]          ; p-wave velocity [m/s]
+[cs = math.sqrt(emod/(2.0*rho*(1+nu)))] ; s-wave velocity [m/s]
+[lambda = cp/(wfreq)]
+[l5     = cs/(5.0)]
+[rad    = 0.5*(l5/kappa)]
+[rhob   = [6.0/math.pi*rho] ]
+
+[l  = 4.0*lambda]
+[nb = 5]
+[h  = nb*2.0*rad]
+[nz = 1]
+[zc = h/nz]
+[cl = 10.0*zc]
+[nx = int((0.5*(l+cl))/zc)]
+[b_pfc = (int(0.5*l/(2.0*rad))+1)*2.0*rad-rad]
+[b_f3d = b_pfc -cl]
+[l     = b_f3d + nx*zc]
+
+[epsilon = 1.0e-3]
+
+zone create brick size [nx*nz] @nz @nz point 0  [b_f3d]  [-0.5*zc] [-0.5*zc] ...
+                                       point 1      [l]  [-0.5*zc] [-0.5*zc] ...
+                                       point 2  [b_f3d]  [ 0.5*zc] [-0.5*zc] ...
+                                       point 3  [b_f3d]  [-0.5*zc] [ 0.5*zc]
+zone cmodel assign elastic
+zone property young @emod poisson @nu
+zone initialize density @rho
+model cycle 0 ; to initialize gp masses
+model range create 'right' position-x [l-0.1*zc] [l+0.1*zc]
+zone face group 'right' range named-range 'right'
+zone face apply quiet-normal range named-range 'right'
+zone face apply quiet-dip range named-range 'right'
+zone face apply quiet-strike range named-range 'right'
+zone gridpoint fix velocity-y 
+zone gridpoint fix velocity-z 
+
+model domain extent [0.0-5.0*rad] [l+5.0*rad] [-nb*rad-5.0*rad] [nb*rad+5.0*rad] 
+ball generate cubic radius [rad] box [0.0] [b_pfc] [-(nb-1)*rad] [(nb-1)*rad]
+ball attribute density [rhob]
+contact cmat default model linearpbond ...
+                   method pb_deformability emod [4.0/math.pi*mmod] kratio 1.0 ...
+                   property pb_ten 1e20 pb_coh 1e20 
+model clean
+contact method bond gap 0.01
+
+ball-zone create
+
+fish define setMassFactors(eps)
+  loop foreach local cb ball.zone.ball.list
+    local b = ball.zone.ball.ball(cb)
+    local bxpos = ball.pos.x(b)
+    ball.extra(b,1) = (1.0-2.0*eps)*(b_pfc - bxpos)/(b_pfc-b_f3d) + eps
+    ball.zone.ball.mass.factor(cb) = ball.extra(b,1) 
+  endloop
+  loop foreach local cgp ball.zone.gp.list
+    local gp     = ball.zone.gp.gp(cgp)
+    local gpxpos = gp.pos.x(gp)
+    gp.extra(gp,1) = (1.0-2.0*eps)*(b_f3d - gpxpos)/(b_f3d - b_pfc) + eps
+    ball.zone.gp.mass.factor(cgp) = gp.extra(gp,1)  
+  endloop
+end
+@setMassFactors(@epsilon)
+
+ball group 'left' range position-x [-0.1*rad] [0.1*rad]
+[mleft = ball.groupmap('left')]
+
+history interval 1
+model history name  '1' mechanical time-total
+ball  history name '11' velocity-x position 0.0,0.0,0.0
+ball  history name '12' velocity-x position [0.25*l],0.0,0.0
+ball  history name '13' velocity-x position [0.5*l],0.0,0.0
+zone  history name '14' velocity-x position [0.75*l],0,0
+zone  history name '15' velocity-x position [l],0,0
+zone  history name '16' velocity-x position [0.5*l],0,0
+ball  history name '21' displacement-x position 0.0,0.0,0.0
+ball  history name '22' displacement-x position [0.25*l],0.0,0.0
+ball  history name '23' displacement-x position [0.5*l],0.0,0.0
+zone  history name '24' displacement-x position [0.75*l],0,0
+zone  history name '25' displacement-x position [l],0,0
+zone  history name '26' displacement-x position [0.5*l],0,0
+
+fish define pulse
+  local wave = 0.0
+  if mech.time.total <= 1.0 / wfreq
+    wave = 0.5*(1.0 - math.cos(2.0*math.pi*wfreq*mech.time.total)) * wpeak
+  endif
+  loop foreach local b mleft
+    ball.force.app(b,1) =  4.0*rad^2*cp*rho*wave
+  endloop
+end
+
+model save 'wave-cpl_ini'
+model solve time [3.5*(l/cp)] fish-call 1.0 @pulse 
+model save 'wave-cpl_final'
+return

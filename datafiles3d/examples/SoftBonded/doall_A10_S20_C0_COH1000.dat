@@ -1,0 +1,32 @@
+model new
+
+[tag = 'A10']
+model restore [string.build('brick_%1-iso',tag)]
+; Install contact model
+[igap     = 0.0*davg ] 
+[emod     = 50.0e9   ]
+[kratio   = 2.5      ]
+[fric     = 0.5      ]
+[ten_mean = 20.0e6  ]
+[ten_std  = 0.0e6    ]
+[coh_mean = 100.0e7  ]
+[coh_std  = 0.0e6    ]
+[soft     = 20.0     ]
+[cut      = 0.0      ]
+[tag += '_G0_E50_KR25_S20_C0_COH1000']
+program call 'bond_sb.dat' 
+
+; Perform Direct Tension Test (using domain distortion)
+[tag = 'A10_G0_E50_KR25_S20_C0_COH1000']
+model restore [string.build('brick_%1-bonded',tag)]
+[strain_rate = 1.0]
+[tag += '_SR1']
+program call 'tt2.dat'
+; Perform Unconfined Compression Test (using domain distortion)
+[tag = 'A10_G0_E50_KR25_S20_C0_COH1000']
+model restore [string.build('brick_%1-bonded',tag)]
+[strain_rate = 1.0]
+[tag += '_SR1']
+program call 'ucs2.dat'
+
+program return

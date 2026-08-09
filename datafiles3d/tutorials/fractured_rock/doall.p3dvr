@@ -1,0 +1,11 @@
+; fname: doall.p3dvr
+;
+; sequentially call the datafiles used to create a fractured rock mass model  
+;===========================================================================
+model title 'Fractured Rock'
+program call 'make_brick.p3dat'
+program call 'make_intact.p3dat'
+program call 'make_fractured.p3dat'
+program return
+;===========================================================================
+; eof: doall.p3dvr

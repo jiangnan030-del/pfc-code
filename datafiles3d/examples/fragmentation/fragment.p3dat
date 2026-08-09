@@ -1,0 +1,99 @@
+; fname: fragment.p3dat
+;
+; Illustrate how the Fragment, DFN and Model Result logic can be used
+; to study the fragmentation of a Bonded Particle Model.
+;
+;=============================================================================
+model new
+model precision 15
+model title 'Fragmentation of a Bonded Particle Model'
+
+;-----------------------------------------------------------------------------
+; -------------- INITIAL PHASE: CREATION OF A BONDED SPECIMEN ----------------
+;-----------------------------------------------------------------------------
+
+model domain extent -5 5 -5 5 -7.5 7.5 condition destroy
+contact cmat default model linear property kn 1e7
+contact cmat default type ball-ball model linearpbond ...
+                                    property kn 5e6 proximity 0.1
+
+wall generate box -2.5 2.5 -2.5 2.5 -5 5
+model random 10001
+ball distribute porosity 0.3 radius 0.25 0.3 box -2.5 2.5 -2.5 2.5 -5 5
+ball attribute density 1.0e3 damp 0.7
+
+model cycle 2000 calm 10
+model solve calm 1000 ratio-average 5e-3
+
+contact method bond gap 0.1
+contact property pb_kn 1e7 pb_ks 1e7 pb_ten 4e5 pb_coh 4e5 pb_fa 20.0
+
+wall delete
+contact cmat default type ball-facet model linear ...
+                                     property kn 1e7 ks 1e7 fric 0.5
+
+wall generate id 1 name 'top' polygon -4.0 -4.0 5.0 ...
+                                      -4.0  4.0 5.0 ...
+                                       4.0  4.0 5.0 ...
+                                       4.0 -4.0 5.0
+
+
+wall generate id 2 name 'bottom' polygon -4.0 -4.0 -5.0 ...
+                                         -4.0  4.0 -5.0 ...
+                                          4.0  4.0 -5.0 ...
+                                          4.0 -4.0 -5.0
+
+wall attribute rotation-center 0.0 0.0  5.0 range position-z  5.0
+wall attribute rotation-center 0.0 0.0 -5.0 range position-z -5.0
+model clean
+model cycle 10
+model solve elastic ratio-average 5e-3
+wall attribute velocity-z 0.0 gradient 0.0 0.0 -0.001
+model history name 1 mechanical time-total
+wall history name 2 force-contact id 1
+wall history name 3 force-contact id 2
+model save 'initial'
+
+;-----------------------------------------------------------------------------
+; ----------- CASE 0: NO TRACKING OF FRAGMENTS - NO BALL RESULTS -------------
+;-----------------------------------------------------------------------------
+
+model solve time 50.0
+model save 'final-case0'
+
+;-----------------------------------------------------------------------------
+; ----------- CASE 1: CONTINUOUS UPDATE OF FRAGMENTS WITH BALL RESULTS -------
+;-----------------------------------------------------------------------------
+model restore 'initial'
+
+fragment register ball-ball
+fragment activate time 0.1
+model mechanical time-total 0.0
+model result interval mechanical 0.1 
+model result warn off interval active true 
+ball result add-attribute fragment active true
+wall result add-attribute velocity active true
+
+model solve time 50.0
+model save 'final-case1'
+
+;program call 'post_treat.p3fis'
+;@make_movie_case1
+
+;-----------------------------------------------------------------------------
+; ----------- CASE 2: CUSTOM UPDATE OF FRAGMENTS AND BALL RESULTS ------------
+;-----------------------------------------------------------------------------
+model restore 'initial'
+
+program call 'fracture.p3fis'
+@track_init
+model solve time 50.0
+@track_end
+model save 'final-case2'
+
+;program call 'post_treat.p3fis'
+;@make_movie_case2
+
+return 
+;=============================================================================
+; eof: fragment.p3dat

@@ -1,0 +1,104 @@
+; fname: free_expansion.p3dat
+;
+; Itasca Consulting Group, Inc.
+; ===========================================================================
+; Thermal option verification problem:
+;        Free expansion of a heated specimen
+;
+; ===========================================================================
+program log-file "free_expansion.log"
+program log on
+; ===========================================================================
+model new
+model title 'Free expansion of a heated specimen'
+
+; build specimen
+
+model domain extent -5 5
+contact cmat default type ball-ball    ...
+              model linearcbond ...
+              method deformability emod 3.81e8 krat 1.0 proximity 0.005
+
+contact cmat default type ball-facet   ...
+              model linear     ...
+              method deformability emod 3.81e8 krat 1.0
+
+
+wall generate box -1 1
+model random 10001
+ball distribute porosity 0.36     ...
+                 radius 0.05 0.08 ...
+                 box -1 1
+
+ball attribute position multiply 0.95
+ball attribute density 1500.0 damp 0.7
+model cycle 2000 calm 100
+model mechanical timestep scale
+model solve ratio-average 1e-4
+
+contact method bond gap 0.005
+contact property cb_tenF 1e20 cb_shearF 1e20
+wall delete
+ball attribute displacement multiply 0.0 
+model cycle 1000
+model mechanical timestep auto
+model solve ratio-average 1e-6
+
+
+; install measurement sphere and activate strain calculation
+
+measure create id 1 radius 0.95
+
+fish define ini_mstrains
+  global mp = measure.find(1)
+  global mstrains = matrix(3,3)
+end
+@ini_mstrains
+
+fish define accumulate_mstrains
+  global msrate =  measure.strain.rate(mp)
+  global mstrains = mstrains + msrate * global.timestep
+  global xxmstrain = mstrains(1,1)
+  global yymstrain = mstrains(2,2)  
+  global zzmstrain = mstrains(3,3)  
+end
+
+fish callback add @accumulate_mstrains 11.0
+history fish @xxmstrain
+history fish @yymstrain
+history fish @zzmstrain
+
+model save "initial"
+
+;---------------- case a: apply +100 deg C ----------------------------
+model configure thermal
+ball thermal attribute expansion 3.0e-6
+ball thermal attribute specific-heat 1.0e3
+ball thermal attribute temperature 0.0
+ball thermal attribute temperature-increment=100.0
+model cycle 1
+model thermal off mechanical on
+ball attribute displacement multiply 0.0
+model cycle 1000
+model solve ratio-average 1e-6
+model save "final1"
+
+;---------------- case b: apply -100 deg C ----------------------------
+model restore "initial"
+model configure thermal
+ball thermal attribute expansion 3.0e-6
+ball thermal attribute specific-heat 1.0e3
+ball thermal attribute temperature 0.0
+ball thermal attribute temperature-increment=-100.0
+model thermal on mechanical on
+model cycle 1
+model thermal off mechanical on
+ball attribute displacement multiply 0.0
+model cycle 1000
+model solve ratio-average 1e-6
+model save "final2"
+
+program log off
+return
+; ===========================================================================
+; eof: free_expansion.p3dat

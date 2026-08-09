@@ -1,0 +1,33 @@
+model new
+
+model restore 'beforeApplication'
+plot 'ModelGeometry' export bitmap filename 'sleeve-initial-geom.png'
+plot 'ContactForces' export bitmap filename 'sleeve-initial-contact.png'
+
+model restore 'ucs'
+plot 'TestResults' export bitmap filename 'sleeve-ucs-results.png'
+
+-test check float @failureStress 2.289154e+06 tolerance 10
+-test check float @failureStrain 1.144800e+00 tolerance 1e-6
+
+model restore 'to1e4'
+plot 'ContactForces' export bitmap filename 'sleeve-1e4-contact.png'
+
+model restore 'triaxial1e4'
+plot 'TestResults' export bitmap filename 'sleeve-1e4-results.png'
+
+-test check float @failureStress 2.274284e+06 tolerance 10
+-test check float @failureStrain 1.172912e+00 tolerance 1e-6
+
+model restore 'triaxial5e4'
+plot 'TestResults' export bitmap filename 'sleeve-5e4-results.png'
+
+-test check float @failureStress 2.806940e+06 tolerance 1
+-test check float @failureStrain 1.409109e+00 tolerance 1e-6
+
+model restore 'triaxial1e5'
+plot 'TestResults' export bitmap filename 'sleeve-1e5-results.png'
+
+-test check float @failureStress 3.172748e+06 tolerance 1
+-test check float @failureStrain 1.617861e+00 tolerance 1e-6
+

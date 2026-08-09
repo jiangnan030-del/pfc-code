@@ -1,0 +1,98 @@
+; fname: TableTennis.p3dat
+; The example shows how to create a table tennis game!
+;
+; ====================================================
+model new
+
+;define the initial velocity of the ball
+[XballInitialVelocity = -3.0]
+[ZballInitialVelocity = 2.0]
+
+; definition of extent and condition
+model domain extent -1 1
+model domain condition destroy
+
+;creation of the table
+call 'CreateTable.p3dat'
+
+;creation of the ball
+ball create id 1 ...
+            radius   [Lx*0.005]                      ...
+            position [xTable(1,2)*0.98]              ...
+                     [(yTable(1,1)+yTable(1,2))*0.5] ...
+                     [zTable+Ly*0.3]
+ball trace id 1
+ball attribute density 10            ...
+    velocity-x @XballInitialVelocity ...
+    velocity-z @ZballInitialVelocity
+
+;linear model for ball-facet contacts
+contact cmat default type ball-facet model linear ...
+   property kn 1e6 ks 1e6 fric 0.009
+
+model gravity 0 0 -9.81
+
+;check for ball-net contacts
+fish define checknet(arr)
+    ct=arr(1)
+    ;in case of ball-facet contacts, contact.end1 refers to the ball, 
+    ;contact.end2 refers to the facet
+    if wall.group(wall.facet.wall(contact.end2(ct))) == "net"
+      io.out("Net!!")
+      bp = ball.find(1)
+      ball.vel(bp,1)=0
+      ball.vel(bp,3)=0
+    endif
+end
+
+;check fi=ot ball-table contacts!
+fish define tablecontact(ct)
+    con = ct(1)
+    ;in case of ball-facet contacts, contact.end1 refers to the ball,
+    ;contact.end2 refers to the facet
+    if wall.group(wall.facet.wall(contact.end2(con))) == "table"
+      moverackets
+    endif
+end
+
+;compute the new position of the racket and move it!
+fish define moverackets
+  bp = ball.find(1)
+  xvel = ball.vel.x(bp)
+  zvel = ball.vel.z(bp)
+  xpos = ball.pos.x(bp)
+  zpos = ball.pos.z(bp)
+  if xvel < 0
+    if xpos > 0   
+      ball.vel(bp,1)=0
+      ball.vel(bp,3)=0
+	  io.out("Fault!!")
+    endif
+    wp = wall.find(7)
+    L = xTable(1,1) - xpos
+  else
+    if xpos < 0   
+      ball.vel(bp,1)=0
+      ball.vel(bp,3)=0
+	  io.out("Fault!!")
+    endif
+    wp = wall.find(8)
+    L = xTable(1,2) - xpos
+  endif
+  zM = (zvel/xvel)*L + (-9.81/2)*((L/xvel)^2)
+  if zM > domain.min.z
+    if zM < domain.max.z
+      wall.pos.z(wp) = zM + zpos
+    endif
+  endif
+end
+
+;set fish callbacks to check if the ball touches the net
+fish callback add @checknet event contact_activated
+;set fish callback to prepare the racket position
+fish callback add @tablecontact event contact_activated
+
+model solve time 1.0
+model save 'game'
+;==============================================================
+;eof: TableTennis.p3dat

@@ -1,0 +1,194 @@
+; Cut out the tunnel 
+model new
+
+; Restore the equilibrated model
+model restore 'BBM_Equil'
+
+; Delete the tunnel rigid blocks
+rblock delete range group 'tunnel'
+
+; Reset the velocities of the blocks and zones
+model calm 
+
+[fixMap = rblock.groupmap('supportBlock')]
+
+; Fix all dof of the the support blocks
+rblock fix velocity spin range group 'supportBlock' 
+
+; Get the model back into equilibrium
+model cycle 1
+model solve ratio-average 1e-5
+
+; For each rigid block in the apply group we need to set the 
+; applied force and also, if it isn't bonded to anything, need
+; to activate all of the contacts
+fish define computeSupportForce
+    loop foreach local rb fixMap
+        if rblock.isbonded(rb) == false
+            loop foreach local con rblock.contactmap.all(rb)
+                contact.inhibit(con) = false
+            endloop
+        endif
+        rblock.force.app(rb) = vector(0,0,0)
+        rblock.force.app(rb) = -1.0 * rblock.force.unbal(rb)
+        rblock.extra(rb,1) = rblock.force.app(rb)
+    endloop
+end
+@computeSupportForce
+
+; Free the support blocks and equilibrate
+rblock free velocity spin 
+model cycle 1
+model solve ratio-average 1e-5
+
+; Reset the displacement of the blocks and zones
+rblock attribute displacement 0 0 0
+zone gridpoint initialize displacement 0 0 0
+
+; FISH function used to define the tensile and shear strength. It
+; returns a non-negative value from a normal distribution with
+; given mean and standard deviation. It must take a contact point
+; as the first argument.
+fish define normalDist(c,mean,sdev)
+    loop while true
+        local val = mean + (math.random.gauss * sdev)
+            if val >= 0.0 then
+                normalDist = val
+                exit
+            endif
+    endloop
+end
+
+; Assign the normal distribution of tensile and shear strengths
+contact property sb_ten @normalDist [tensileStrength] [tensileStrength/5.0] ...
+                                    range contact type 'rblock-rblock' ...
+                                    contact active
+contact property sb_coh @normalDist [tensileStrength * cohesionFactor] ...
+                                    [(tensileStrength*cohesionFactor)/5.0] ...
+                                    range contact type 'rblock-rblock' ...
+                                    contact active
+
+; Create a DFN for crack tracking
+[shearNetwork = dfn.create("shear")]
+[tensileNetwork = dfn.create("tensile")]
+[diskArray = array.create(5)]
+[diskArray(1) = "disk"]
+[trackCracks = false]
+
+; Define a fish callback so that, if a bond breaks with a rigid block that is
+; no longer bonded all contacts stop being inhibited.
+; Also this will track bond breakages. 
+fish define onBondBreak(arr)
+    con = arr(1)
+    local rb = contact.end1(con)
+    local lcon = null
+    if rblock.isbonded(rb) == false
+        loop foreach lcon rblock.contactmap.all(rb)
+            contact.inhibit(lcon) = false
+        endloop
+    endif
+    if type.pointer.name(contact.end2(con)) == 'rblock'
+        rb = contact.end2(con)
+        if rblock.isbonded(rb) == false
+            loop foreach lcon rblock.contactmap.all(rb)
+                contact.inhibit(lcon) = false
+            endloop
+        endif
+    endif
+    if trackCracks == true
+        ; Do not track cracks that happen in the periodic space
+        if math.mag(contact.offset(con)) == 0.0
+            local mode = arr(2)
+            diskArray(2) = contact.pos(con)
+            diskArray(3) = math.sqrt(contact.prop(con,'sb_area') / math.pi)
+            local norm = contact.normal(con)
+            diskArray(4) = math.dip.from.normal(norm)/math.degrad
+            diskArray(5) = math.ddir.from.normal(norm)/math.degrad
+            if diskArray(5) < 0.0
+                diskArray(5) = 360.0+diskArray(5)
+            endif
+            if mode == 1
+                fracture.create(tensileNetwork,diskArray)
+            else
+                fracture.create(shearNetwork,diskArray)
+            endif
+        endif
+    endif
+end
+
+; Add this callback to the bond_break event
+fish callback add @onBondBreak event bond_break   
+
+; Reset the velocities of the blocks and zones
+model calm
+
+; Solve to equilibrium with the correct tensile and shear 
+; strengths installed
+model cycle 1
+model solve ratio-average 1e-5
+
+; Reset the block and zone displacements for the last time
+rblock attribute displacement 0 0 0
+zone gridpoint initialize displacement 0 0 0
+
+; Start tracking cracks
+[trackCracks = true]
+
+; Save the model
+model save 'BBM_Tunnel' 
+
+
+; FISH halt used to relax the support force. Basically you specify 
+; the current percentage, final percentage, increment to reduce the
+; percentage by, and the target average ratio. As cycling continues 
+; the halt checks for the average ratio smaller than the target value. 
+; If not smaller then continue to cycle otherwise reduce the current 
+; percentage by the increment. This reduction continues until the final
+; percentage is achieved. 
+[curPercent = 100]
+[endPercent = 30]
+[increment = 1]
+[targetAveRatio = 5.e-4]
+fish define halt
+    halt = 0
+    currentAveRatio = math.max(zone.mech.ratio.avg,rblock.mech.ratio.avg)
+    if curPercent <= endPercent
+        if currentAveRatio <= targetAveRatio 
+            halt = 1
+        endif
+        exit
+    endif
+    if currentAveRatio <= targetAveRatio
+        curPercent = math.max(0.0,float(curPercent) - float(increment))
+        loop foreach local rb fixMap
+            rblock.force.app(rb) = rblock.extra(rb,1) * curPercent / 100.0
+        endloop
+    endif
+end
+
+; Record the current percentage as a history and solve
+fish history name 1 @curPercent
+history interval 1
+model solve fish-halt @halt
+
+; Save the model where the support stress is ramped to 30 percent of the
+; original value
+model save 'BBM_30_Percent'
+
+; End at 5 percent with an increment of 0.5 percent, solve, and save the model 
+; where the support stress is ramped to 5 percent of the original value
+[endPercent = 5]
+[increment = 0.5]
+model solve fish-halt @halt
+model save 'BBM_5_Percent'
+
+; End at 0 percent with an increment of 0.01 percent, solve, and save the 
+; model where the support stress is ramped to 0 percent of the original value
+[endPercent = 0]
+[increment = 0.01]
+model solve fish-halt @halt
+model save 'BBM_0_Percent'
+
+; Register the rigid block contacts and compute the fragments
+fragment register rblock-rblock
+fragment compute

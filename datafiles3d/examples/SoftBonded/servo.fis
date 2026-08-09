@@ -1,0 +1,50 @@
+; filename: servo.fis
+; 
+; Utility function to define a servo-control algorithm 
+; to distort the periodic domain to apply a target confinement
+;
+; ===================================================================
+
+fish define servo_domain
+  global Lx = domain.max.x() - domain.min.x()
+  global Ly = domain.max.y() - domain.min.y()
+  global Lz = domain.max.z() - domain.min.z()
+  local vol = Lx*Ly*Lz
+  local m = measure.find(1)
+  local mr = math.sqrt((0.5*Lx)^2+(0.5*Ly)^2+(0.5*Lz)^2)
+  local mv = (4.0/3.0)*math.pi*mr^3
+  measure.radius(m) = mr
+  local stress = measure.stress(m) *mv/vol
+  global s_xx = stress(1,1)
+  global servo_xdiff = servo_ts_xx - s_xx
+  global servo_xrate = servo_gain *servo_xdiff 
+  domain.strain.rate.xx = servo_xrate
+  global s_yy = stress(2,2)
+  global servo_ydiff = servo_ts_yy - s_yy
+  global servo_yrate = servo_gain *servo_ydiff 
+  domain.strain.rate.yy = servo_yrate
+  global s_zz = stress(3,3)
+  if servo_do_z then 
+    global servo_zdiff = servo_ts_zz - s_zz
+    global servo_zrate =  servo_gain * servo_zdiff
+  endif
+  domain.strain.rate.zz = servo_zrate
+end
+
+fish define servo_halt
+  servo_halt = false
+  local delta = math.max(math.abs(servo_xdiff/servo_ts_xx) ...
+               ,math.abs(servo_ydiff/servo_ts_yy))
+  if servo_do_z then 
+    delta = math.max(math.abs(servo_zdiff/servo_ts_zz),delta)
+  endif
+  if delta < servo_tol then
+    servo_halt = true
+    domain.strain.rate.xx = 0.0
+    domain.strain.rate.yy = 0.0
+    domain.strain.rate.zz = 0.0
+  endif
+end
+; ===================================================================
+program return
+; EOF: servo.fis

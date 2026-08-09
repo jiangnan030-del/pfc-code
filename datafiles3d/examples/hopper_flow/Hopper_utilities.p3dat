@@ -1,0 +1,158 @@
+; fname: Hopper_utilities.p3dat
+;
+; Utilities for hopper simulation
+;=========================================================================
+
+fish define build_hopper(fric,brad,theta)
+  local cfric = fric
+  ;
+  ballRadius = brad
+  W0 = ballRadius*10
+  W = W0*5.0
+  H = W*1.50
+  d = ballRadius*5.0
+  B = (W-W0)*0.5
+  theta = 30*math.pi/180
+  A = B*math.tan(Theta)  
+  command
+    ; build a brick
+    model domain condition periodic
+    model domain extent ([-W/4],[W/4]) ([-d], @d) (0,[W/4])
+    contact cmat default model linear ...
+                 property kn 1e4 ks 5e3 fric @cfric dp_nratio 0.2
+    contact cmat default type ball-facet model linear ...
+        property kn 1.5e4 ks 7.5e3 fric @cfric dp_nratio 0.2
+        
+    ball distribute bin 1 radius @ballRadius
+    ball attribute density 2500 damp 0.7
+    model cycle 1000 calm 10
+    model mechanical timestep scale
+    model solve
+    brick make id 1
+    ; delete existing balls, build the hopper and assemble the brick 
+    ball delete
+    model domain condition destroy periodic destroy
+    model domain extent ([-W/2],[W/2]) ([-d],@d) ([-d],[H*2.0])
+    
+    wall generate group 'leftlateral_1'  ...
+     polygon ([-W/2],[-d],@A) ([-W/2],0.0,@A) ...
+             ([-W/2],[-d],@H) ([-W/2],0.0,@H)
+    wall generate group 'leftlateral_2'  ...
+     polygon ([-W/2],0.0,@A) ([-W/2],@d,@A) ...
+             ([-W/2],0.0,@H) ([-W/2],@d,@H)
+    wall generate group 'rightlateral_1' ...
+     polygon ([W/2],[-d],@A) ([W/2],0.0,@A) ...
+             ([W/2],[-d],@H) ([W/2],0.0,@H)
+    wall generate group 'rightlateral_2' ...
+     polygon ([W/2],0.0,@A) ([W/2],@d,@A) ...
+             ([W/2],0.0,@H) ([W/2],@d,@H)
+    wall generate group 'leftbottom_1'   ...
+     polygon ([-W0/2],[-d],0.0) ([-W0/2],0.0,0.0) ...
+             ([-W/2],[-d],@A) ([-W/2],0.0,@A)
+    wall generate group 'leftbottom_2'   ...
+     polygon ([-W0/2],0.0,0.0) ([-W0/2],@d,0.0) ...
+             ([-W/2],0.0,@A) ([-W/2],@d,@A)
+    wall generate group 'rightbottom_1'  ...
+     polygon ([W0/2],[-d],0.0) ([W0/2],0.0,0.0) ...
+             ([W/2],[-d],@A) ([W/2],0.0,@A)
+    wall generate group 'rightbottom_2'  ...
+     polygon ([W0/2],0.0,0.0) ([W0/2],@d,0.0) ...
+             ([W/2],0.0,@A) ([W/2],@d,@A)
+    
+    wall generate id 1001 group 'cap' ...
+         polygon ([-W0/2],[-d],0.0) ([W0/2],[-d],0.0) ...
+                 ([-W0/2],0.0,0.0) ([W0/2],0.0,0.0)
+    wall generate id 1002 group 'cap' ...
+         polygon ([-W0/2],0.0,0.0) ([W0/2],0.0,0.0)   ...
+                 ([-W0/2],@d,0.0) ([W0/2],@d,0.0)
+    
+    brick assemble id 1 origin ([-W/2],[-d],0.0) size 2 1 6 
+    ball delete range plane origin ([-W0/2],0.0,0.0) ...
+                            dip  30.0 dip-direction 90.0 below
+    ball delete range plane origin ([ W0/2],0.0,0.0) ...
+                            dip -30.0 dip-direction 90.0 below
+    ball attribute density 2500 damp 0.7
+    model clean
+    @trim
+    model gravity 0 0 -9.81
+    model hist name 1 mech ratio-average
+    model cycle 1000 calm 100
+    model solve ratio-average 1e-3
+    ball group 'LevelOne' range position-z 0.0 [H/6]
+    ball group 'LevelTwo' range position-z [H/6][2*H/6]
+    ball group 'LevelThree' range position-z [2*H/6][3*H/6]
+    ball group 'LevelFour' range position-z [3*H/6][4*H/6]
+    ball group 'LevelFive' range position-z [4*H/6][5*H/6]
+    ball group 'LevelSix' range position-z [5*H/6][2*H]
+  endcommand
+end
+
+fish define trim
+  loop foreach local c contact.list('ball-facet')
+    local bp = contact.end1(c)
+    ball.delete(contact.end1(c))
+  endloop
+end
+
+fish define MeasureDischargedMass(bp)
+  discharged_mass = discharged_mass + ball.mass.real(bp)
+  command
+    table @filename insert [mech.time.total] @discharged_mass
+  endcommand
+end
+
+fish define HaltControl
+  local temp = 0
+  if ball.num < 5
+    command
+      table @filename export @filename
+    endcommand
+    temp = 1
+  endif
+  HaltControl = temp
+end
+
+fish define Action(fill_level,key)
+  z_min = fill_level*H / 100.0
+  z_max = 2*H
+  command
+    ball delete range position-z @z_min @z_max
+  endcommand
+  discharged_mass = 0
+  filename = 'fill_'+string(int(fill_level))+'_'+key
+  command
+    model cycle 5000 calm 50
+    model solve ratio-average 1e-3
+    ball attribute damp 0.0
+    wall delete range set id 1001 1002
+    model mechanical time-total 0.0
+    model mechanical timestep auto
+    model results interval mechanical 0.1 prefix @key
+    wall results active true 
+    ball results add-attribute velocity active true
+    fish callback add @MeasureDischargedMass event ball_delete
+    echo off
+    model solve fish-halt @HaltControl
+    echo on
+    fish callback remove @MeasureDischargedMass event ball_delete
+    model save @filename
+  endcommand
+end
+
+fish define makeMovie(fname)
+  command
+    model result map @rmap
+  endcommand
+  cnt = 1
+  loop foreach local res rmap
+    local str = string.build("%1%2.png",fname,cnt)
+    cnt = cnt + 1
+    command
+      model result import [res] skip-fish
+      plot export bitmap filename @str 
+    endcommand
+  endloop
+end
+
+;=========================================================================
+; eof: Hopper_utilities.p3dat

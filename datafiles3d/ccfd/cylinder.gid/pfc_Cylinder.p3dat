@@ -1,0 +1,22 @@
+new
+set fish autocreate off
+
+config cfd
+
+domain extent -1 1 -1 1 0 8
+set gravity 0 0 -9.8
+set timestep max 1e-5
+
+ball create rad 0.004 position-x 0.2 position-y 0.2 position-z 7.8 id 1
+ball attribute density 7000
+
+ball history id 1 zvelocity id 1
+
+plot add hist 1
+plot add cfdelement
+
+cfd buoyancy on
+cfd connect density 998.23 viscosity 1.004e-3
+
+pause
+cfd slave

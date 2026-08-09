@@ -1,0 +1,55 @@
+new
+set fish autocreate off
+
+domain extent -5e-2 6e-2 -6e-2 5e-2 -5e-2 5e-2
+cmat default model linear property kn 1e1 dp_nratio 0.2
+
+def inline
+  local dim = 2.5e-2
+  local radius = dim / 5 / 4
+  global xdim = dim - radius
+  global ydim = 2 * dim - radius
+  global element = 0
+end
+@inline
+
+ball generate cubic box [-1*xdim] @xdim [-1*ydim] @ydim  [-1*xdim] @xdim rad [5e-2/5/2/4]
+
+ball attr dens 2600
+ball fix velocity-x
+ball fix velocity-y
+ball fix velocity-z
+
+config cfd
+cfd buoy off
+
+def ftime
+  global ftime = mech.age
+end
+
+def fhist
+  global fhist = element.cfd.vel.y(element)
+end
+
+history id  1 fish @fhist
+history id  2 fish @ftime
+
+plot add hist 1 vs 2
+
+cfd connect density 998.23 viscosity 1.004e-3
+
+def inline
+  element = element.cfd.near(0, 0, 0) ; find the index to the element in the center.
+end
+@inline
+
+cfd slave
+
+sav final.sav
+
+def print_results
+  local oo = io.out(string.build("Fluid velocity %1", fhist))
+end
+@print_results
+
+plot bitmap filename "porous1.png"

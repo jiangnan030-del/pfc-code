@@ -1,0 +1,55 @@
+
+;************************************************************
+; UCS TEST
+;************************************************************
+; Restore the specimen and run the UCS 
+model restore 'specimen'
+; Positive velocity means compression - this will be applied to the top 
+; and bottom platens
+[nvel = 0.5]
+
+; Apply the velocities to the rigid blocks so that 
+; the model isn't shocked by the initial velocity on the platens. 
+rblock attribute velocity-y 0.0 gradient 0 [-2.0 * nvel / specHeight]
+
+; Set the platen velocities after assigning the velocities throughout
+; the model. 
+rblock attribute velocity-y [nvel] range group 'bottom-platen'
+rblock attribute velocity-y [-1*nvel] range group 'top-platen'
+
+; Run the UCS test
+model solve fish-halt @halt cycles 1000000
+
+; Compute fragments
+fragment compute
+
+; Save the UCS test
+model save 'ucs'
+
+;************************************************************
+; DIRECT TENSION TEST
+;************************************************************
+; Restore the specimen and run the UCS 
+model restore 'specimen'
+
+; Negative velocity means tension - this will be applied to the top 
+; and bottom platens
+[nvel = -0.05]
+
+; Apply the velocities to the rigid blocks so that 
+; the model isn't shocked by the initial velocity on the platens. 
+rblock attribute velocity-y 0.0 gradient 0 [-2.0 * nvel / specHeight]
+
+; Set the platen velocities after assigning the velocities throughout
+; the model. 
+rblock attribute velocity-y [nvel] range group 'bottom-platen'
+rblock attribute velocity-y [-1*nvel] range group 'top-platen'
+
+; Run the direct tension test
+model solve fish-halt @halt cycles 1000000
+
+; Compute fragments
+fragment compute
+
+; Save the tension test
+model save 'tension'

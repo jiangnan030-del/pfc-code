@@ -1,0 +1,51 @@
+; fname: cmlinear_simple.p2dat
+;
+;  Exercise the Linear contact model
+;==============================================================================
+model new
+model title 'Balls in a box'
+
+; Set the domain extent
+model domain extent -10.0 10.0
+
+; Modify the default slots of the Contact Model Assignment Table
+; Here we choose the linear contact model (with kn=1e6) for all contact types
+contact cmat default model linear property kn 1.0e6
+
+; Generate 30 balls in a box
+wall generate box -5.0 5.0 one-wall
+model random 10001
+ball generate radius 1.0 1.5 box -4.0 4.0 number 30
+
+; Assign ball density
+ball attribute density 100.0
+
+; Activate gravity
+model gravity 10.0
+
+;Save the initial state
+model save 'initial-state'
+
+; Solve for a given time and save the model
+model solve time 10.0
+model save 'caseA-nodamping'
+
+; Restore the initial state
+model restore 'initial-state'
+
+; Modify the default slots of the Contact Model Assignement Table
+; Newly created contacts will use these settings
+contact cmat default model linear ...
+                           property kn 1.0e6 ks 1.0e6 fric 0.25 dp_nratio 0.1
+; Apply the CMAT to existing contacts as well
+; Note that the contact model will be overridden (and therefore all previous 
+; information will be lost)
+contact cmat apply
+
+; Solve for a given time and save the model
+model solve time 10.0
+model save 'caseB-damping'
+
+return
+;==============================================================================
+; eof: cmlinear_simple.p2dat

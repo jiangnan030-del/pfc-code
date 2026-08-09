@@ -1,0 +1,48 @@
+; fname: tension.p3dat
+;
+;  Perform a direct tension test on a bonded sample
+;==============================================================================
+
+echo off
+call 'ss_gage.fis'
+call 'fracture.p3fis'
+echo on
+
+; set up global parameters for strain measurement
+@setup_gage
+
+; delete the walls
+wall delete
+
+; identify balls to form top and bottom grips
+ball group 'top_grip' range position-z 0.035 0.04
+ball group 'bottom_grip' range position-z -0.035 -0.04
+
+; apply loading by moving top and bottom platens
+ball fix velocity-z range group 'top_grip'
+ball attribute velocity-z 0.03 range group 'top_grip'
+ball fix velocity-z range group 'bottom_grip'
+ball attribute velocity-z -0.03 range group 'bottom_grip'
+
+; apply a small amount of damping
+ball attribute damp 0.1
+
+; add a measurement circle to record stress
+; location defaults to 0,0
+measure create radius 0.02
+
+; record histories
+measure history name 1 stress-zz id 1
+fish history name 2 @axial_strain_gage
+
+; record cracks
+@track_init
+fish history name 3 @crack_num
+
+; run the test until stress falls below 70% of the peak
+[peak_fraction = 0.7]
+model solve fish-halt @loadhalt_meas
+list @peak_stress
+
+;==============================================================================
+; eof: tension.p3dat

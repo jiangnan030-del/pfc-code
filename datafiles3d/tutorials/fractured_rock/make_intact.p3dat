@@ -1,0 +1,19 @@
+; fname: make_intact.p3dat
+;
+; assemble a brick in a full scale model and install the linear parallel 
+; bond contact model 
+;===========================================================================
+model new
+model domain extent -4.0 4.0 -4.0 4.0 -8.0 8.0
+brick import id 1 
+brick assemble id 1 origin -4.0 -4.0 -8.0 size 2 2 4
+contact cmat default model linearpbond method deformability emod 60e9 ...
+                           kratio 2.5 property fric 0.5 lin_mode 1
+contact cmat apply
+ball attribute force-contact multiply 0.0 moment-contact multiply 0.0 
+contact method bond gap 0.0 pb_deformability emod 60e9 kratio 2.5
+contact property pb_ten 1e8 pb_coh 5e7 pb_fa 20.0
+model save 'intact'
+return
+;===========================================================================
+; eof: make_intact.p3dat

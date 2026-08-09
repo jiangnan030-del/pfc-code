@@ -1,0 +1,115 @@
+; fname: BlenderBalls.p3dat
+
+model new
+wall resolution full
+
+call '../blender_geometry/ImportBlenderGeometry.p3dat'
+
+model domain extent [lbx-0.05*dx] [ubx+0.05*dx] [lby-0.05*dy] ...
+                    [uby+0.05*dy] [lbz-0.05*dz] [ubz+dz] ...
+                    condition destroy 
+
+contact cmat default model linear prop dp_nratio 0.8 dp_mode 1
+
+wall import from-geom 'rotor1' clean id 1
+wall import from-geom 'rotor2' clean id 2
+wall import from-geom 'rotor3' clean id 3
+wall import from-geom 'rotor4' clean id 4
+wall import from-geom 'rotor5' clean id 5
+wall import from-geom 'rotor6' clean id 6
+wall import from-geom 'rotor7' clean id 7
+wall import from-geom 'rotor8' clean id 8
+
+wall import from-geom 'blade1' clean id 9
+wall import from-geom 'blade2' clean id 10
+wall import from-geom 'blade3' clean id 11
+wall import from-geom 'blade4' clean id 12
+wall import from-geom 'blade5' clean id 13
+wall import from-geom 'blade6' clean id 14
+wall import from-geom 'blade7' clean id 15
+wall import from-geom 'blade8' clean id 16
+wall group 'facetassembly' facet 
+wall group 'wallassembly'
+
+wall import from-geom 'bin' clean id 17
+wall active-side top range position-z [ubz-0.05*ubz] [ubz+0.05*ubz]
+wall active-side top range name 'facetassembly'
+
+model save 'blender'
+
+fish def setup(rpm)
+  global rp_   = vector(0,0,0) ;rotation point
+  global spin_ = vector(0,-1,0)*2*math.pi*rpm/60.0 ;axis of rotation
+  global knB_  = 1e4 
+  global ksB_  = 1e4 
+  global knW_  = 1e6
+  global ksW_  = 1e6
+  global fric_ = 0.18 ;friction
+  global dens_ = 2000 ;density
+end
+@setup(60)
+
+;generate some balls in the box
+fish def inBlender(pos,b)
+  inBlender = 0
+  if type.pointer.id(b) = ball.typeid
+    wp = wall.find(17);
+    inBlender = wall.inside(wp,ball.pos(b))
+  endif
+end
+
+fish def inBody(pos,b)
+  inBody = 0
+  if type.pointer.id(b) = ball.typeid
+    local tmp = 0
+    loop foreach local wp wall.list
+      if wall.id(wp) # 17
+        tmp = wall.inside(wp,ball.pos(b))
+        if tmp = 1
+          inBody = 1
+          exit
+        endif
+      endif
+    endloop
+  endif
+end
+
+ball distribute porosity 0.45     ...
+                resolution 1.5e-2 ... 
+                bin 1             ...
+                radius 1.0 1.5  ...
+                volume-fraction 1.0  ...
+                box [lbx] [ubx] [lby] [uby] [lbz] [lbz+0.3*dz] ...
+                range fish @inBlender ...
+                      fish @inBody not
+                      
+model gravity 0,0,-9.81
+ball prop 'kn' @knB_ 'ks' @ksB_ 'fric' @fric_
+wall prop 'kn' @knW_ 'ks' @ksW_ 'fric' [fric_*0.5]
+ball attr density @dens_ damp 0.7
+model cycle 2000 calm 500
+model mechanical timestep scale
+model solve ratio-average 1e-3
+model mechanical timestep auto
+
+wall attribute rotation-center @rp_ range group 'wallassembly'
+wall attribute spin @spin_ range group 'wallassembly'
+
+;set up groups for mixing
+ball group 'FrontLeft'  range position-x [lbx-0.05*dx]     0.0       ...
+                            position-y [lby-0.05*dy]     0.5       
+ball group 'FrontRight' range position-x     0.0       [ubx+0.05*dx] ...
+                            position-y [lby-0.05*dy]     0.5
+ball group 'BackLeft'   range position-x [lbx-0.05*dx]     0.0       ...
+                            position-y     0.5       [uby+0.05*dy]
+ball group 'BackRight'  range position-x     0.0       [ubx+0.05*dx] ...
+                            position-y     0.5       [uby+0.05*dy]
+
+model save 'ball_model'
+
+model solve time 1.0
+
+model save 'end_blenderball'
+
+;=============================================================================
+; eof: BlenderBalls.p3dat

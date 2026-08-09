@@ -1,0 +1,127 @@
+
+; Clear the model state and create a domain in which all of the 
+; rigid blocks exist
+model new
+model domain extent -10 10
+
+; Create a cube of material for the UCS and direct tension test
+geometry set 'specimen' 
+[specWidth = 7.0]
+[specHeight = 7.0]
+geometry generate box [-specWidth/2.0] [specWidth/2.0] ...
+                      [-specHeight/2.0] [specHeight/2.0] 
+
+; Create the rigid blocks as tetrahedra. This command meshes the 
+; geometry set, creating rigid blocks. 
+rblock construct from-geometry 'specimen' maximum-edge 0.2 
+
+; Scale the rigid blocks so that they are originally overlapping. This is
+; required for the contact location to be correct when bonding. When the bond
+; method is called the contact location is only incrementally updated.
+rblock scale relative 1.01
+
+; Erode the rigid blocks, introducing rounding. This allows one to cull the 
+; numerous edge-edge and vertex-vertex contacts that do not contribute to the 
+; model response. This may fail at times so it is a good idea to use the 
+; skip-errors keyword
+rblock erode relative skip-errors 0.05
+
+; Group the top and platens which are fixed chunks of rigid blocks. 
+rblock group 'top-platen' range position-y [specHeight/2.0 - 0.2] 10
+rblock group 'bottom-platen' range position-y [0.2 - specHeight/2.0] -10
+
+; Set the damping and density
+rblock attribute density 2650 damp 0.7 
+
+; Fish symbol for the bond tensile strength 
+[tensileStrength = 2e7]
+
+; Ratio cohesive to tensile strength
+[cohesionFactor = 3.]
+
+; Target elastic modulus to put into the bonds
+[emod = 1.95e11] 
+
+; Specify the softbond model properties. 
+contact cmat default model softbond   method deformability emod [emod] ...
+                           kratio 2.0 ...
+                           property sb_ten [tensileStrength] ...
+                           sb_coh [cohesionFactor*tensileStrength] ...
+                           sb_fa 30.0 fric 0.5 sb_mode 1
+                      
+; Create the contacts and bond them. Note that no softening is used in this 
+; example so the softbond contacts act essentially as parallel bond contacts 
+; except that there is only 1 set of stiffnesses and the shear stress is not
+; nulled if shear failure occurs. 
+model clean all
+contact method bond 
+
+; Make the platen contacts have the null contact model. This is to reduce 
+; computation and to ensure that they do not contribute to the stress 
+; computation. The match keyword is used to specify that contacts fall within
+; the range if both of the ends have the specified group. 
+contact model null range group 'top-platen' match 2
+contact model null range group 'bottom-platen' match 2
+
+; Make the contacts with the platen rigid blocks have infinite strength
+contact property sb_ten 1e10 sb_coh 1e10 range group 'top-platen' match 1
+contact property sb_ten 1e10 sb_coh 1e10 range group 'bottom-platen' match 1
+
+; Inhibit the contacts that are not bonded. This is VERY important for 
+; efficient bonded block models. This means that the force-displacement law 
+; for vertex-vertex contacts is skipped along with updating the contact 
+; positions. You can compare the results and runtimes with and without the 
+; vertex-vertex contacts. If in small strain these contacts can actually be 
+; deleted with the contact delete command and contact detection can be 
+; turned off. 
+contact inhibit range contact gap 0 100
+
+; Fix the y-velocity of the top and bottom platens
+rblock fix velocity-y spin range group 'top-platen' 
+rblock fix velocity-y spin range group 'bottom-platen' 
+
+; Make maps of the rigid blocks in the platens
+[topMap = rblock.groupmap('top-platen')]
+[botMap = rblock.groupmap('bottom-platen')]
+
+; Define a FISH function to compute the stress and elastic modulus. 
+; Histories of these quantities will be kept for display. 
+fish define stress
+    local stressTop = 0.0
+    local stressBot = 0.0
+    strain = 0.0
+    loop foreach b topMap
+        stressTop = stressTop + math.abs(rblock.force.contact(b,2))
+        strain = 2.*math.abs(rblock.disp(b,2))
+    endloop
+    loop foreach b botMap
+        stressBot = stressBot + math.abs(rblock.force.contact(b,2))
+    endloop
+    local st = (stressTop + stressBot)/2.0/specWidth
+    strain = strain/specHeight
+    if strain > 0
+        modulus = st / strain
+    endif
+    stress = st
+end
+fish history @stress
+fish history @strain
+fish history @modulus
+history interval 1
+
+; Set up a FISH halt to end cycling when the stress is 80% of the maximum
+[maxStress = 0.0]
+[peakPercentage = 0.8]
+fish define halt
+    halt = 0
+    maxStress = math.max(maxStress,stress)
+    if stress < peakPercentage * maxStress
+        halt = 1
+    endif
+end
+
+; Register for fragment computation
+fragment register rblock-rblock
+
+; Save the specimen
+model save 'specimen'

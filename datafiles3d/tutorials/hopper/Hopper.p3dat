@@ -1,0 +1,87 @@
+; fname: Hopper.p3dat
+;==============================================================================
+model new
+model title 'Simple hopper discharge model'
+
+fish define geometry
+  W = 20.0
+  W0 = 6.0
+  Theta = 30
+  H = 30.0
+  A = (W-W0)*math.tan(Theta*math.pi/180)
+end
+@geometry
+
+model domain extent ([-W*1.5],[W*1.5]) ([-W*1.5],[W*1.5]) ([-H*2],[H*2])
+model domain condition destroy
+
+wall generate id 1 cylinder base (0.0,0.0,@A) height [H-A] ...
+                            radius [W*0.5] cap false false one-wall
+wall generate id 2 cone radius [W0*0.5] [W*0.5] height @A cap true false 
+
+contact cmat default type ball-ball model linear ...
+     property kn 5e7 ks 5e7 fric 0.577 dp_nratio 0.2
+
+contact cmat default type ball-facet model linear ...
+    property kn 1e8 ks 1e8 fric 0.1 dp_nratio 0.2
+
+model random 10001
+ball distribute porosity 0.5 ...
+                box ([-W*0.35],[W*0.35]) ([-W*0.35],[W*0.35]) (@A,[1.8*H]) ...
+                radius 0.8 1.0
+ball attribute density 1000.0 damp 0.7
+
+model gravity 0 0 -9.81
+model cycle 1000 calm 50
+model mechanical timestep scale
+model solve ratio-average 1e-3
+
+ball delete range cylinder end-1 (0.0,0.0,0.0) end-2 (0.0,0.0,@H) ...
+                           radius 0.0 [W*0.5] not 
+ball group 'LevelOne' range position-z 0.0 [H/6]
+ball group 'LevelTwo' range position-z [H/6][2*H/6]
+ball group 'LevelThree' range position-z [2*H/6][3*H/6]
+ball group 'LevelFour' range position-z [3*H/6][4*H/6]
+ball group 'LevelFive' range position-z [4*H/6][5*H/6]
+ball group 'LevelSix' range position-z [5*H/6][H*2]
+
+wall delete range position-z 0.0 set id 2
+wall generate id 200 ...
+              box ([-W*1.25],[W*1.25]) ([-W*0.25],[W*0.25]) ([-H*1.5],0.0)
+wall delete range set id 201
+
+model save 'initial'
+
+fish define makeMovie(dur,inc,name)
+  i = 0
+  curv = inc
+  dur = dur
+  namefile = name
+  loop while (curv <= dur)
+    i = i + 1
+    dist = 150.0/(i*0.01)
+    if dist > 150.0
+      dist = 150.0
+    endif
+    local fname = string.build('%1_%2.png',name,i)
+    command
+      model result import @i skip-fish
+      ;plot export bitmap filename @fname
+    endcommand
+    curv = curv + inc
+  endloop
+end
+
+ball attribute damp 0.0
+model mechanical timestep auto
+model mech time-total 0.0
+model results interval mechanical 0.04
+wall results active on
+ball results active true add-attribute velocity
+model solve time 15.0
+model save 'final'
+;@makeMovie(15,0.04,'test')
+
+return
+;==============================================================================
+; eof: Hopper.p3dat

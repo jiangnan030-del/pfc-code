@@ -1,0 +1,99 @@
+contact method bond gap @igap range contact all 
+
+contact cmat proximity 0.0
+contact delete range contact inactive
+model clean all
+
+; Bring to istotropic confinement
+[Lx0 = domain.max.x() - domain.min.x()]
+[Ly0 = domain.max.y() - domain.min.y()]
+[Lz0 = domain.max.z() - domain.min.z()]
+
+fish define e_xx
+  Lx = domain.max.x() - domain.min.x()
+  e_xx = (Lx - Lx0) / Lx0
+end
+fish define e_yy
+  Ly = domain.max.y() - domain.min.y()
+  e_yy = (Ly - Ly0) / Ly0
+end
+fish define e_zz
+  Lz = domain.max.z() - domain.min.z()
+  e_zz = (Lz - Lz0) / Lz0
+end
+
+model cycle 1
+history purge
+fish history name 'e_xx' @e_xx 
+fish history name 'e_yy' @e_yy 
+fish history name 'e_zz' @e_zz 
+
+[servo_do_z  = true    ]
+[servo_ts_xx = pc      ]
+[servo_ts_yy = pc      ]
+[servo_ts_zz = pc      ]
+[servo_gain  =  1.0e-5 ]
+[servo_tol   =  1.0e-5 ]
+model solve fish-call 1.0 @servo_domain ...
+            fish-halt @servo_halt ...
+            ratio-average 1e-5 ...
+            cycles 100 and
+
+model save [string.build('triax_%1-iso',tag)]
+
+; perform compression
+history purge
+[servo_do_z = false    ]
+[servo_zrate = -strain_rate]
+[servo_gain  =  1.0e-5 ]
+[Lx0 = domain.max.x() - domain.min.x()]
+[Ly0 = domain.max.y() - domain.min.y()]
+[Lz0 = domain.max.z() - domain.min.z()]
+
+fish define emod_secant
+  emod_secant = (s_zz - 0.5*(s_xx+s_yy)) / e_zz
+end
+fish define poiss_ratio
+  poiss_ratio = - 0.5*(e_xx+e_yy) / e_zz
+end
+
+fish history name 'emod_secant' @emod_secant 
+fish history name 'poiss_ratio' @poiss_ratio 
+
+fish define halt
+  halt = false
+  if e_zz < -emax
+    halt = 1
+  endif
+end
+
+[emax = 2.0e-4]
+model solve fish-call 1.0 @servo_domain ...
+            fish-halt @halt ...
+            cycles 100 and
+[ymod  =   (s_zz - 0.5*(s_xx+s_yy)) / e_zz]
+[poiss = - 0.5*(e_xx+e_yy) / e_zz]
+model save [string.build('triax_%1-elastic',tag)]
+
+fish define halt
+  halt = false
+  s_zz_min = math.min(s_zz,s_zz_min)
+  if s_zz > peak_frac*s_zz_min
+    halt = 1
+    exit
+  endif
+  if e_zz < -emax
+    halt = 1
+    exit
+  endif  
+end
+
+[emax = 15.0e-3]
+[peak_frac = 0.8 ]
+model solve fish-call 1.0 @servo_domain ...
+            fish-halt @halt ...
+            cycles 100 and
+model save [string.build('triax_%1-final',tag)]
+; ===================================================================
+program return
+;EOF

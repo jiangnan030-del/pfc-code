@@ -1,0 +1,16 @@
+;=============================================================================
+; fname: zero_F0.p2dat
+;
+;=============================================================================
+; Zero F0 at existing and future contacts, solve.
+model restore 'final-fric_0.5_rfric_0.1_F0_0.7_D0_0.0015.p2sav'
+
+contact property adh_f0 0.0
+contact cmat default type ball-ball ...
+             property adh_f0 0.0
+model cycle 10
+model solve ratio-average 1e-5
+model save 'zero_F0.p2sav'
+return
+;=============================================================================
+; eof: zero_F0.p2dat

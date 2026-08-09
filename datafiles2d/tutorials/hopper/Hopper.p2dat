@@ -1,0 +1,95 @@
+; fname: hopper.p2dat
+;
+; simple hopper discharge tutorial
+;==============================================================================
+model new
+program thread auto
+
+fish define geometry
+  W = 20.0
+  W0 = 6.0
+  Theta = 30
+  H = 30.0
+  A = (W-W0)*math.tan(Theta*math.pi/180)
+end
+@geometry
+
+model domain extent ([-W*1.5],[W*1.5])([-H*2],[H*2.5])
+model domain condition destroy
+
+wall create id 1 vertices ([-W0*0.5],0.0) ([-W*0.5],@A)
+wall create id 2 vertices ([W0*0.5],0.0) ([W*0.5],@A)
+wall create id 3 vertices ([-W0*0.5],0.0) ([W0*0.5],0.0)
+wall create id 4 vertices ([-W*0.5],@A) ([-W*0.5],@H)
+wall create id 5 vertices ([W*0.5],@A) ([W*0.5],@H)
+
+contact cmat default type ball-ball model linear ...
+    property kn 1e7 ks 1e7 fric 0.577 dp_nratio 0.3
+
+contact cmat default type ball-facet model linear ...
+    property kn 1e8 ks 1e8 fric 0.1  dp_nratio 0.3
+
+model random 10001
+ball distribute porosity 0.5 box ([-W*0.5],[W*0.5]) (@A,[2.0*H]) ...
+                radius 0.6 0.75
+ball attribute density 2000
+model cycle 1000 calm 50
+model cycle 2000
+model mechanical timestep scale
+model gravity 0 -9.81
+ball delete range position-x [W*0.5] 100
+ball delete range position-x -100 [-W*0.5]
+model solve ratio-average 1e-4
+ball delete range position-y -100 0
+model orientation-tracking on
+model save 'Hopper2D'
+
+ball group 'LevelOne'   range position-y 0.0 [H/6]
+ball group 'LevelTwo'   range position-y [H/6][2*H/6]
+ball group 'LevelThree' range position-y [2*H/6][3*H/6]
+ball group 'LevelFour'  range position-y [3*H/6][4*H/6]
+ball group 'LevelFive'  range position-y [4*H/6][5*H/6]
+ball group 'LevelSix'   range position-y [5*H/6][H*1.5]
+
+wall generate id 200 box ([-W*1.25],[W*1.25]) ([-H*1.5],0.0)
+wall delete range set id 202
+wall delete range set id 3
+
+model mechanical time-total 0.0
+model result interval mechanical 0.2 warn off
+ball result active on add-attribute group add-attribute velocity
+wall result active on
+model mechanical timestep auto
+
+fish define replay(name,plot)
+  rmap  = map(0,0)
+  map.remove(rmap,0)
+  command
+    model results map @rmap
+  endcommand
+  local rsize = map.size(rmap)
+  local rkeys = map.keys(rmap)
+  loop foreach local k rkeys
+    local iname = map.value(rmap,k)
+    local oname = string.build('%1_t%2.png',name,k)
+    command
+      model result import @iname skip-fish
+    endcommand
+    if plot = true
+      command
+        plot bitmap plot 'the system' filename @oname
+      endcommand
+    endif
+  endloop
+end
+
+model solve time 25.0
+
+model save 'final'
+@replay('test',false)
+;@replay('test',true)
+
+
+return
+;==============================================================================
+; eof: hopper.p2dat

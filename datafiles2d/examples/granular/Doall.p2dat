@@ -1,0 +1,51 @@
+;---------BIAXIAL TEST ON A LOOSE SAMPLE
+model new
+;define ball and wall friction values to generate a loose sample
+[ballFriction = 0.3 ]
+[wallFriction = 0.0    ]
+[filename = 'loose'    ]
+program call 'MakeSpecimen'
+model save ['specimen'+filename]
+program call 'CompactSpecimen'
+model save ['biaxial-iso'+filename]
+program call 'BiaxialTest'
+model save ['biaxial-final'+filename]
+
+;---------BIAXIAL TEST ON A DENSE SAMPLE
+model new
+;define ball and wall friction values to generate a dense sample
+[ballFriction = 0.0 ]
+[wallFriction = 0.0    ]
+[filename = 'dense'  ]
+program call 'MakeSpecimen'
+model save ['specimen'+filename]
+program call 'CompactSpecimen'
+model save ['biaxial-iso'+filename]
+[ballFriction = 0.3  ]
+program call 'BiaxialTest'
+model save ['biaxial-final'+filename]
+
+;---------ESTIMATION OF ELASTIC PARAMETERS - LOAD UNLOAD TEST
+[filename = 'dense']
+model restore ['biaxial-iso'+filename]
+[ballFriction = 0.3  ]
+program call 'LoadUnload'
+model save 'biaxial-unload'
+
+;---------SIMPLE SHEAR TEST ON A DENSE SAMPLE
+[filename = 'dense']
+model restore ['biaxial-iso'+filename]
+[ballFriction = 0.3  ]
+[wallFriction = 0.3  ]
+program call 'SimpleShear'
+model save 'simpleshear-final'
+
+;---------PURE SHEAR TEST ON A DENSE SAMPLE
+[filename = 'dense']
+model restore ['biaxial-iso'+filename]
+[ballFriction = 0.3  ]
+[wallFriction = 0.3  ]
+program call 'PureShear'
+model save 'pureshear-final'
+
+program return

@@ -1,0 +1,46 @@
+;define ball and wall friction property
+ball property 'fric' @ballFriction
+wall property 'fric' @wallFriction
+
+[ly0 = wly]
+[lx0 = wlx]
+[wexx = 0.0]
+[weyy = 0.0]
+[wevol = 0.0]
+
+fish define wexx
+  wexx  = (wlx - lx0) / lx0 
+end
+
+fish define weyy
+  weyy = (wly - ly0) / ly0
+end
+
+fish define wevol
+  wevol = wexx + weyy
+end
+
+fish history name 51 @wexx
+fish history name 52 @weyy
+fish history name 53 @wevol
+history purge
+
+[rate = 0.2]
+wall servo activate off range set name 'vesselTop' 
+wall servo activate off range set name 'vesselBottom' 
+wall attribute velocity-y [-rate*wly] range set name 'vesselTop'
+wall attribute velocity-y [ rate*wly] range set name 'vesselBottom'
+[stop_me = 0]
+[target = 0.075]
+fish define stop_me
+  if weyy <= -target then
+    stop_me = 1
+  endif
+end
+
+ball attribute displacement multiply 0.0
+model calm
+
+model solve fish-halt @stop_me
+
+program return

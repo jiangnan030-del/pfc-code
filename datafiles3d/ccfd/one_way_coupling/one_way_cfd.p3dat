@@ -1,0 +1,51 @@
+model new
+model title 'One-way CFD coupling example'
+model domain extent -1 2 -1 2 0 2 condition periodic
+contact cmat default model linear
+model mechanical timestep max 1e-5
+
+wall generate name 'cell1' box 0 1 0 1 0 1
+wall delete walls range set name 'cell1Bottom'
+wall delete walls range set name 'cell1Top'
+wall generate name 'cell2' box 0 1 0 1 1 2
+wall delete walls range set name 'cell2Bottom'
+wall delete walls range set name 'cell2Top'
+wall property 'kn' 1e2 'ks' 1e2 'fric' 0.25
+
+model gravity 0 0 -9.81
+
+ball create radius 0.001  position-x 0.5 position-y 0.3  position-z 1.5
+ball create radius 0.0015 position-x 0.5 position-y 0.5  position-z 1.5
+ball create radius 0.002  position-x 0.5 position-y 0.7  position-z 1.5
+
+ball attribute density 2000.0
+ball property 'kn' 1e2 'ks' 1e2 'fric' 0.25
+
+model configure cfd
+
+cfd read nodes 'Node.dat'
+cfd read elements 'Elem.dat'
+cfd buoyancy on
+element cfd attribute density 1000.0
+element cfd attribute viscosity 1.5
+
+element cfd attribute velocity-x 0.0
+element cfd attribute velocity-y 0.0
+element cfd attribute velocity-z 0.0
+
+fish define set_fluid_velocity
+  loop foreach local ele element.cfd.list
+    element.cfd.vel.x(ele) = 0.0
+    element.cfd.vel.y(ele) = 0.0
+    element.cfd.vel.z(ele) = 0.0
+  end_loop
+end
+@set_fluid_velocity
+
+ball history velocity-z id 1
+ball history velocity-z id 2
+ball history velocity-z id 3
+
+model cycle 2500
+ball list attribute velocity
+return

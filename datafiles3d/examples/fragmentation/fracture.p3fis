@@ -1,0 +1,139 @@
+; fname: fracture.p3fis
+;
+; Simple environment to track fragmentation in a BPM.
+; Monitor LinearPBond model "bond_break" events and turn them into fractures.
+; Use the Fragment and Ball Result logic to record fragment IDs 
+;
+;=============================================================================
+
+fish define add_crack(entries)
+  local contact    = entries(1)
+  local mode       = entries(2)
+  local strength   = entries(3)
+  local frac_pos   = contact.pos(contact)
+  local norm       = contact.normal(contact)
+  local dfn_label  = 'crack'
+  local frac_dip
+  local frac_dipdir
+  local frac_size = contact.prop(contact,'pb_radius')
+  
+  local len2 = math.sqrt(comp.x(norm)*comp.x(norm)+comp.y(norm)*comp.y(norm))
+  if len2 = 0
+    len2 = 1
+  endif
+  frac_dipdir = math.atan2(comp.x(norm)/len2,comp.y(norm)/len2) / math.degrad
+  local len3 = math.sqrt(len2*len2+comp.z(norm)*comp.z(norm))
+  if len3 = 0
+    len3 = 1
+  endif
+  frac_dip = math.atan2(len2/len3,comp.z(norm)/len3) / math.degrad
+  if frac_dip<0.0
+    frac_dip = -frac_dip
+    frac_dipdir = frac_dipdir + 180.0
+  endif
+  if frac_dip>90.0
+    frac_dip = 180.0-frac_dip
+    frac_dipdir = frac_dipdir + 180.0
+  endif
+  if frac_dipdir<0.0
+    frac_dipdir = frac_dipdir + 360.0
+  endif
+  if frac_dipdir > 360.0
+    frac_dipdir = frac_dipdir - 360.0
+  endif
+  if mode = 1 then 
+    ; failed in tension
+    dfn_label = dfn_label + '_tension'
+  else if mode = 2 then
+    ; failed in shear
+    dfn_label = dfn_label + '_shear'
+  endif
+  local arg = array.create(5)
+  arg(1) = 'disk'
+  arg(2) = frac_pos
+  arg(3) = frac_size
+  arg(4) = frac_dip
+  arg(5) = frac_dipdir 
+
+  global dfn = dfn.find(dfn_label)
+  if dfn = null then
+    dfn = dfn.create(dfn_label)
+  endif
+  local fnew = fracture.create(dfn,arg)
+  fracture.prop(fnew,'failure_strength') = strength
+  fracture.prop(fnew,'age')  = mech.time.total
+  crack_added = true
+end
+
+fish define monitor
+  if crack_added = true then
+    local numfrag = fragment.num()
+    command 
+      fragment compute
+    endcommand
+    if fragment.num() # numfrag then
+      command
+        model result export @track_fname
+      endcommand
+      map.add(track_map,mech.time.total,numfrag)
+    endif
+  endif
+  crack_added = false
+end
+
+fish define track_fname
+  track_fcount += 1
+  track_fname = string.build('frag%1.p3result',track_fcount)
+end
+
+fish define track_init
+  command
+    fracture delete
+    model result clear-map
+    fragment clear
+    fragment register ball-ball
+    ball result add-attribute fragment active true
+    wall result add-attribute velocity active true
+  endcommand
+  ; activate fishcalls
+  command
+    fish callback remove @add_crack event bond_break
+    fish callback add @add_crack event bond_break
+    fish callback remove @monitor 100.0
+    fish callback add @monitor 100.0
+  endcommand
+  ; reset global variables
+  global crack_added = false
+  global track_fcount = 0
+  command
+    fragment compute
+    model result export @track_fname
+  endcommand
+  global track_map = map(mech.time.total,fragment.num(1))
+end
+
+fish define track_end
+  local numfrag = fragment.num()
+  command 
+    fragment compute
+  endcommand
+  if fragment.num() # numfrag then
+    command
+      model result export @track_fname
+    endcommand
+    map.add(track_map,mech.time.total,numfrag)
+  endif
+  make_table
+end
+
+fish define make_table
+  local frag1 = fragment.find(1)
+  local tab = table.create('volfrag1')
+  loop foreach local value map.keys(track_map)
+    table(tab,value) = ...
+       fragment.vol(frag1,fragment.catalog.num(value)) / fragment.vol(frag1,1)
+  endloop
+end
+
+;=============================================================================
+; eof: fracture.p3fis

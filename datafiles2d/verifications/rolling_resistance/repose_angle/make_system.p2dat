@@ -1,0 +1,67 @@
+;===========================================================================
+; fname: make_system.p2dat
+;===========================================================================
+model new
+model title 'Rolling Resistance Linear Contact Model: Repose angle'
+model random 10001
+
+; container and balls attributes
+[cyl_rad    =  50.0e-3 ] ; container half-width [m]             
+[cyl_height =  100.0e-3] ; container height     [m] 
+[ravg       =   1.5e-3 ] ; ball average radius  [m] 
+[rdev       =   0.5    ] ; ball relative radius deviation [-]
+[dens       =   2.0e3  ] ; ball density  [kg/m3]
+[poros      =   0.3    ] ; initial porosity [-]
+
+; contact model properties
+[emod   = 1.0e6]  ; Young's modulus (deformability method) [Pa]
+[kratio = 2.0  ]  ; stiffness ratio (deformability method) [-]
+[fric   = 0.01 ]  ; friction coefficient                   [-]
+[dpnr   = 0.2  ]  ; normal critical damping ratio          [-]
+[dpsr   = 0.2  ]  ; shear critical damping ratio           [-]
+[dpm    = 3    ]  ; dashpot mode                           [-]
+[rfric  = 0.0  ]  ; rolling resistance coefficient         [-]
+
+; set domain extent and boundary conditions
+model domain extent [-4.0*cyl_rad] [4.0*cyl_rad]  ...
+                    [-4.0*ravg] [2.0*cyl_height]  ...
+             condition destroy
+
+; set the CMAT default slots
+contact cmat default model rrlinear method deformability         ...
+                                               emod      @emod   ...
+                                               kratio    @kratio ...
+                                    property fric      @fric     ...
+                                             dp_nratio @dpnr     ...
+                                             dp_sratio @dpsr     ...
+                                             dp_mode   @dpm      ...
+                                             rr_fric   @rfric        
+
+; generate the base plane and the container
+wall generate id 1               ... 
+              name 'base_plane'  ...
+              plane
+
+wall create id 100                                                 ...
+            name 'container'                                       ...
+            vertices [-cyl_rad] 0.0         [-cyl_rad] @cyl_height ...
+                     [-cyl_rad] @cyl_height [ cyl_rad] @cyl_height ...
+                     [cyl_rad]  @cyl_height [ cyl_rad] 0.0 
+
+; distribute balls inside the container region
+ball distribute porosity @poros                      ...
+                resolution @ravg                     ...  
+                radius [1.0-0.5*rdev] [1.0+0.5*rdev] ...
+                box [-1.0*cyl_rad] [1.0*cyl_rad]     ... 
+                               0.0 @cyl_height     
+                   
+; bring to rest under gravity loading                                      
+ball attribute density @dens damp 0.7
+model cycle 1000 calm 10
+model gravity 9.81
+model solve
+ball attribute damp 0.0
+model save 'system_ini.p2sav'
+program return
+;===========================================================================
+; eof: make_system.p2dat

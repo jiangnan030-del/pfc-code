@@ -1,0 +1,80 @@
+; fname: PolydisperseAssembly.p3dat
+; Build a polydisperse granular assembly and compute porosity 
+; using the measure logic in PFC
+; ============================================================================
+;
+
+model new
+call 'MeasureLogic.p3dat'
+
+fish def poly_assembly(size)
+; Create a polydisperse packing in a square domain
+; ARGUMENTS:
+;  - size : size of the domain
+;
+  global xmin       = 0.0
+  global ymin       = 0.0
+  global xmax       = size
+  global ymax       = size
+  global zmin       = 0.0
+  global zmax       = size
+  
+  global width      = xmax-xmin  ; width of box
+  global height     = ymax-ymin  ; height of box
+  global depth      = zmax-zmin  ; depth of the box
+  global tot_vol    = (width)*(height)*(depth)
+  
+  local num         = 10000   ; number of particles
+  
+  local rlo         = size/100
+  local rhi         = 1.25*rlo
+  local oversize    = rhi
+  
+  command
+    model domain extent ([0.0-oversize],[width+oversize])  ...
+                        ([0.0-oversize],[height+oversize]) ...
+                        ([0.0-oversize],[depth+oversize])
+    wall generate box (0.0, @width) (0.0, @height) (0.0, @depth) 
+  end_command
+ 
+  ;--- generate the balls and give them their properties
+  command
+    ball generate radius @rlo @rhi gauss box            ...
+                         ([width*0.02], [width*0.98])   ...
+                         ([height*0.02], [height*0.98]) ...
+                         ([depth*0.02], [depth*0.98]) id=1,@num
+  end_command
+end
+
+fish def averageradius
+  local rad = 0
+  loop foreach local bp ball.list
+    rad = rad + ball.radius(bp)
+  endloop
+  global averageradius = rad/ball.num
+end
+
+fish def get_poros ;computes the exact value of porosity
+  local sum = 0.0
+  loop foreach local bp ball.list
+    sum = sum + 1.33333* math.pi * ball.radius(bp)^3
+  end_loop
+  global get_poros = 1.0 - sum / tot_vol
+end
+
+@poly_assembly(5.0)
+
+@get_poros
+@define_meas_parameters(5000, 0.0)
+@create_meas_regions
+
+fish def display_error(porosity, s)
+  global error = check_error(porosity,s,averageradius)
+  local oo = io.out(string.build("Average Error = %1%)",error))
+end
+@display_error(@get_poros,'Polydisperse')
+
+model save 'PolydisperseAssembly'
+
+; ============================================================================
+; EoF: PolydisperseAssembly.p3dat

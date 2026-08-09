@@ -1,0 +1,19 @@
+; fname: make_brick.p2dat
+;
+; create a brick in periodic space 
+;===========================================================================
+model new
+model domain extent -2.0 2.0 condition periodic
+contact cmat default model linear property kn 1e5
+model random 10001
+ball distribute porosity 0.08 radius 1.0 1.6 res 0.025
+ball attribute density 2500.0 damp 0.7
+model cycle 1000 calm 10
+model mechanical timestep scale
+model solve
+model calm
+brick make id 1
+brick export id 1 skip-errors
+return
+;===========================================================================
+; eof: make_brick.p2dat

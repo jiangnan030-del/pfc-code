@@ -1,0 +1,19 @@
+;===========================================================================
+; fname: do_analysis.p2dat
+;===========================================================================
+model restore 'system_ini'
+[fric  = 0.5]
+[rfric = 0.1]
+program call 'move_container.p2dat'
+;
+model restore 'system_ini'
+[fric  = 0.5]
+[rfric = 0.5]
+program call 'move_container.p2dat'
+;
+model restore 'system_ini'
+[fric  = 0.5]
+[rfric = 1.0]
+program call 'move_container.p2dat'
+;===========================================================================
+; eof: do_analysis.p2dat

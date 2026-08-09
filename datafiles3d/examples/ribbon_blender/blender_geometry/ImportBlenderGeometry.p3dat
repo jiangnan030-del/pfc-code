@@ -1,0 +1,62 @@
+; fname: ImportBlenderGeometry.p3dat
+
+geom import 'rotor1.stl'
+geom import 'rotor2.stl'
+geom import 'rotor3.stl'
+geom import 'rotor4.stl'
+geom import 'rotor5.stl'
+geom import 'rotor6.stl'
+geom import 'rotor7.stl'
+geom import 'rotor8.stl'
+
+geom import 'blade1.stl'
+geom import 'blade2.stl'
+geom import 'blade3.stl'
+geom import 'blade4.stl'
+geom import 'blade5.stl'
+geom import 'blade6.stl'
+geom import 'blade7.stl'
+geom import 'blade8.stl'
+
+geom import 'bin.stl'
+
+;calculate the dimensions of the box needed
+fish def cdim
+  lbx = 1e5
+  lby = 1e5
+  lbz = 1e5
+  ubx = -1e5
+  uby = -1e5
+  ubz = -1e5
+  local gs = geom.set.find(17)
+  loop foreach local gn geom.node.list(gs)
+    local pos = geom.node.pos(gn)
+    if lbx > comp.x(pos)
+      lbx = comp.x(pos)
+    endif
+    if lby > comp.y(pos)
+      lby = comp.y(pos)
+    endif
+    if lbz > comp.z(pos)
+      lbz = comp.z(pos)
+    endif
+
+    if ubx < comp.x(pos)
+      ubx = comp.x(pos)
+    endif
+    if uby < comp.y(pos)
+      uby = comp.y(pos)
+    endif
+    if ubz < comp.z(pos)
+      ubz = comp.z(pos)
+    endif
+
+    endloop
+    dx = ubx - lbx
+    dy = uby - lby
+    dz = ubz - lbz
+end
+@cdim
+
+;=============================================================================
+; eof: ImportBlenderGeometry.p3dat

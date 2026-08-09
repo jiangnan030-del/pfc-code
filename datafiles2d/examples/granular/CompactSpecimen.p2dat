@@ -1,0 +1,54 @@
+[ly0 = wly]
+[lx0 = wlx]
+[v0 = wlx*wly]
+
+[txx = -5.0e5]
+[tyy = -5.0e5]
+wall servo activate on force-x [ txx*wly] ...
+                       velocity-max 0.1 range set name 'vesselRight'
+wall servo activate on force-x [-txx*wly] ...
+                       velocity-max 0.1 range set name 'vesselLeft'
+wall servo activate on force-y [ tyy*wlx] ...
+                       velocity-max 0.1 range set name 'vesselTop'
+wall servo activate on force-y [-tyy*wlx] ...
+                       velocity-max 0.1 range set name 'vesselBottom'
+
+fish define servo_walls
+  wall.servo.force.x(wp_right) =   txx*wly
+  wall.servo.force.x(wp_left)  =  -txx*wly
+  wall.servo.force.y(wp_top)   =   tyy*wlx
+  wall.servo.force.y(wp_bot)   =  -tyy*wlx
+end
+fish callback add @servo_walls  9.0 
+
+fish history name 41 @wsxx
+fish history name 42 @wsyy 
+
+model orientation-tracking on
+model calm
+
+[tol =  5e-3]
+fish define stop_me
+  if math.abs((wsyy - tyy)/tyy) > tol
+    exit
+  endif
+  if math.abs((wsxx - txx)/txx) > tol
+    exit
+  endif
+  if mech.solve("ratio-average") > 1e-6
+    exit
+  endif
+  stop_me = 1
+end
+
+ball attribute displacement multiply 0.0
+model solve fish-halt @stop_me
+
+measure create id 1 rad [0.4*(math.min(lx0,ly0))]
+[porosity = measure.porosity(measure.find(1))]
+@compute_spherestress([0.4*(math.min(lx0,ly0))])
+@compute_averagestress
+
+@identify_floaters
+
+return

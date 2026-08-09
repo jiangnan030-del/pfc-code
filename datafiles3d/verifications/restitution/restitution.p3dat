@@ -1,0 +1,178 @@
+; fname: restitution.p3dat
+;
+; Drop test under gravity: Exercise the linear contact model in the normal 
+; direction with different values of the normal critical damping ratio and
+; of the damping mode.
+; Note the use of the Contact Model Assignment Table to assign different 
+; contact model properties to every contact in this model, based on a spatial 
+; range.
+;
+;=============================================================================
+model new
+model title 'Linear Contact Model: Calibrate the Normal Critical Damping Ratio'
+
+;-----------------------------------------------------------------------------
+; ------------------------ Custom utility functions --------------------------
+;-----------------------------------------------------------------------------
+
+fish define make_system(rad,height)
+  local dia = 2.0*rad
+  local _lx = 2*dia*16
+  local _ly = 2*dia*2
+  local _lz_inf = -0.5*dia
+  local _lz_sup = height + 2.0*dia
+  local _rad = 0.5*dia
+  command
+    model domain extent (0,@_lx) (0,@_ly) (@_lz_inf,@_lz_sup) ...
+           condition reflect reflect reflect
+    wall generate id 1 polygon  0    0      0    ...
+                                @_lx 0      0    ...
+                                0    @_ly   0    ...   
+                                @_lx @_ly   0 
+    model history name 100 mechanical time-total  
+    history interval 1
+  end_command
+  local _count = 0
+  local _zpos = height
+  local test = 1.0
+  loop local j(1,2)
+    local _ypos = dia *(2*j-1)
+    local _ymin = _ypos - 0.5*dia
+    local _ymax = _ypos + 0.5*dia
+    loop local i(1,16)
+      local _xpos = dia *(2*i-1)
+      local _xmin = _xpos - 0.5*dia
+      local _xmax = _xpos + 0.5*dia
+      _count = _count+1
+      command
+        ball create id @_count rad @rad pos (@_xpos,@_ypos,@_zpos)
+        ball history name @_count position-z id @_count
+      end_command
+    end_loop
+  end_loop
+end
+
+fish define fill_cmat(rad,kn)
+  local _cn
+  local _dpmode = 0
+  loop local j(1,2)
+    if j > 1 then
+      _dpmode = 1
+    endif
+    local _ypos = 2.0*rad *(2*j-1)
+    local _ymin = _ypos - rad
+    local _ymax = _ypos + rad
+    loop local i(1,16)
+      local _xpos = 2.0*rad *(2*i-1)
+      local _xmin = _xpos - rad
+      local _xmax = _xpos + rad
+      if i <= 6 then
+        _cn = 0.0 + (i-1.0)*0.01
+      else
+        _cn = 0.0 + (i-6)*0.1
+      endif
+      command
+        contact cmat add model linear property ...
+              kn @kn dp_nratio @_cn dp_mode @_dpmode ...
+              range position-x @_xmin @_xmax ...
+              position-y @_ymin @_ymax
+      end_command
+    end_loop
+  endloop
+end
+
+fish define make_tables(rad,height) 
+  local tab_ana = table.create('analytical')
+  local tab_dp0 = table.create('dp_mode 0')
+  local tab_dp1 = table.create('dp_mode 1')
+  tab_dp = tab_dp0
+  loop local j(1,2)
+    local histfirst = 1 + 16*(j-1)
+    loop local i(1,16)
+      local _cn
+      if i <= 6 then
+        _cn = 0.0 + (i-1)*0.01
+      else
+        _cn = 0.0 + (i-6)*0.1
+      endif    
+      if j = 1 then
+        local rth
+        if _cn # 1.0 then
+          rth = -1.0 *_cn * math.pi / math.sqrt(1.0-_cn*_cn)
+          rth = math.exp(rth)
+        else
+          rth = 0
+        endif
+        table.value(tab_ana,i) = vector(_cn,rth)
+      endif
+      local hid = histfirst + (i-1)
+      local reb_h = get_hist_max(hid) - rad 
+      reb_h = math.max(reb_h,0.0)
+      local repu = math.sqrt(reb_h /(height-rad))
+      table.value(tab_dp,i) = vector(_cn,repu)
+    endloop
+    tab_dp = tab_dp1
+  endloop
+  global err = 0
+  loop i(1,16)
+    err = math.max(err,math.abs(table.y(tab_dp0,i) - table.y(tab_ana,i)))
+  endloop
+end
+
+fish define get_hist_max(hid)
+  ; get the first maximum of a history 
+  tab_tmp = table.create('dummy')
+  command
+    history export @hid table 'dummy'
+  endcommand
+  ; pass first minimum, then find first maximum (height of rebound)
+  local tsize = table.size(tab_tmp)
+  local minpassed = 0
+  local max_h = -1e20
+  section
+    loop local it(2,tsize)
+      local _y1 = table.y(tab_tmp,it-1)
+      local _y2 = table.y(tab_tmp,it)
+      if minpassed = 0 then
+        if _y2 > _y1 then
+          minpassed = 1
+        endif
+      else
+        max_h = math.max(max_h,_y2)
+        if _y2 < max_h then
+          exit section
+        endif
+      endif  
+    endloop
+  end_section
+  table.delete(tab_tmp)
+  get_hist_max = max_h
+end
+
+;-----------------------------------------------------------------------------
+; ------------------------------- SIMULATION ---------------------------------
+;-----------------------------------------------------------------------------
+
+fish create ball_radius 0.025
+fish create drop_height 1.0
+
+@make_system(@ball_radius,@drop_height)
+@fill_cmat(@ball_radius,5.0e4)
+ball attribute dens 2650
+model gravity 0 0 -10.0
+model save 'ini'
+model solve age 1.0
+;
+@make_tables(@ball_radius,@drop_height)
+model save 'final'
+
+model restore 'ini'
+model mechanical timestep fix 1e-5
+model solve age 1.0
+;
+@make_tables(@ball_radius,@drop_height)
+model save 'final-dtfix'
+
+return 
+;=============================================================================
+; eof: restitution.p3dat

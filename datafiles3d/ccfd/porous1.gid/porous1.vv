@@ -1,0 +1,19 @@
+BeginZE C:\src\a_pfc_git\ccfd\test3d\new_coupled_examples\porous1.gid\porous1.vv
+   x -0.157244 0.157244
+   y 0.0866025 -0.0866025
+   z -0.259808 0.259808
+   e 0.0866025
+   v 0.636247 0.586776 0.227183
+   r 0.4464
+   m 0.208165 0.543841 0.812961 0 0.949497 0.0871546 -0.301431 0 -0.234784 0.834651 -0.498233 0 0 0 0 1
+   c 0 4.16334e-017 0
+   pd 0
+   pno 0
+   pfo 0
+   pf 4
+   pv 0
+   NowUse 0
+   DrawingType 0
+   LightVector 90 90 150 0
+EndZE C:\src\a_pfc_git\ccfd\test3d\new_coupled_examples\porous1.gid\porous1.vv
+

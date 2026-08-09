@@ -1,0 +1,384 @@
+{
+    "Header" : {
+        "Type" : "ITASCA PROJECT FILE" ,
+        "Name" : "pfc2d" ,
+        "Version" : 600 ,
+        "Update" : 8 ,
+        "Revision" : 0 ,
+        "Dimension" : 2 ,
+        "DateTime" : "2018-11-26T11:57:18" ,
+        "Binary" : false ,
+        "SixtyFour" : true 
+    },
+    "GuiModuleList" : [ 
+        {
+            "Name" : "Terminal" ,
+            "Entry" : {
+                "SaveFile" : "" ,
+                "Kernel" : {
+                    "LoadCommands" : [  ],
+                    "ModuleList" : {
+                        "Modules" : [  ]
+                    },
+                    "Settings" : {
+                        "UpdateInterval" : 1 ,
+                        "Academic" : false ,
+                        "Demonstration" : false ,
+                        "Unrepeatable" : false ,
+                        "ReadOnly" : false 
+                    },
+                    "ProjectRanges" : {
+                        "SelfIndex" : 1 ,
+                        "Contents" : [  ]
+                    }
+                },
+                "SaveFiles" : {
+                    "Files" : [  ]
+                },
+                "ResultFiles" : {
+                    "Files" : [  ]
+                }
+            }
+        }, 
+        {
+            "Name" : "DFN" ,
+            "Entry" : { }
+        }, 
+        {
+            "Name" : "Editor" ,
+            "Entry" : {
+                "DataFiles" : {
+                    "Files" : [ 
+                        "doall.p2dat" ,
+                        "RegularAssembly.p2dat" ,
+                        "MeasureLogic.p2dat" ,
+                        "PolydisperseAssembly.p2dat" ,
+                        "check-private.p2dat" ,
+                        "plot-private.p2dat" 
+                    ]
+                },
+                "OpenFiles" : [  ]
+            }
+        }, 
+        {
+            "Name" : "GUIGeometry" ,
+            "Entry" : { }
+        }, 
+        {
+            "Name" : "GuiPythonModule" ,
+            "Entry" : { }
+        }, 
+        {
+            "Name" : "ItascaModel" ,
+            "Entry" : { }
+        }, 
+        {
+            "Name" : "PFCModule" ,
+            "Entry" : { }
+        }, 
+        {
+            "Name" : "PFCThermalModule" ,
+            "Entry" : { }
+        }, 
+        {
+            "Name" : "Plot" ,
+            "Entry" : {
+                "DefaultPage" : {
+                    "AutoUpdate" : true ,
+                    "Outline" : {
+                        "Active" : true ,
+                        "Enabled" : true ,
+                        "Width" : 2 ,
+                        "Style" : 1 ,
+                        "Color" : "#000000FF" ,
+                        "Bool" : true 
+                    },
+                    "Background" : "#ffffffFF" ,
+                    "Active" : true ,
+                    "Legend" : {
+                        "Active" : true ,
+                        "Placement" : 0 ,
+                        "TargetSize" : {
+                            "Width" : 25 ,
+                            "Height" : 50 
+                        },
+                        "Position" : {
+                            "X" : 66 ,
+                            "Y" : 40 
+                        },
+                        "Title" : {
+                            "Active" : true ,
+                            "Enabled" : true ,
+                            "Size" : 55 ,
+                            "Family" : "Times New Roman" ,
+                            "Style" : 1 ,
+                            "Color" : "#000000FF" ,
+                            "Bool" : true ,
+                            "Text" : "" 
+                        },
+                        "Caption" : {
+                            "Active" : true ,
+                            "Enabled" : true ,
+                            "Size" : 44 ,
+                            "Family" : "Arial" ,
+                            "Style" : 0 ,
+                            "Color" : "#000000FF" ,
+                            "Bool" : true ,
+                            "Text" : "" 
+                        },
+                        "Heading" : {
+                            "Active" : true ,
+                            "Enabled" : true ,
+                            "Size" : 94 ,
+                            "Family" : "Times New Roman" ,
+                            "Style" : 3 ,
+                            "Color" : "#000000FF" ,
+                            "Bool" : true ,
+                            "Text" : "" 
+                        },
+                        "Copyright" : {
+                            "Active" : true ,
+                            "Enabled" : true ,
+                            "Size" : 40 ,
+                            "Family" : "Arial" ,
+                            "Style" : 0 ,
+                            "Color" : "#000000FF" ,
+                            "Bool" : true ,
+                            "Text" : "" 
+                        },
+                        "Step" : {
+                            "Active" : true ,
+                            "Enabled" : true ,
+                            "Size" : 44 ,
+                            "Family" : "Arial" ,
+                            "Style" : 0 ,
+                            "Color" : "#000000FF" ,
+                            "Bool" : false ,
+                            "Text" : "" 
+                        },
+                        "Time" : {
+                            "Active" : true ,
+                            "Enabled" : true ,
+                            "Size" : 44 ,
+                            "Family" : "Arial" ,
+                            "Style" : 0 ,
+                            "Color" : "#000000FF" ,
+                            "Bool" : false ,
+                            "Text" : "" 
+                        },
+                        "Customer" : {
+                            "Active" : true ,
+                            "Enabled" : true ,
+                            "Size" : 44 ,
+                            "Family" : "Arial" ,
+                            "Style" : 0 ,
+                            "Color" : "#000000FF" ,
+                            "Bool" : false ,
+                            "Text" : "" 
+                        },
+                        "View" : {
+                            "Active" : true ,
+                            "Enabled" : true ,
+                            "Size" : 44 ,
+                            "Family" : "Arial" ,
+                            "Style" : 0 ,
+                            "Color" : "#000000FF" ,
+                            "Bool" : false ,
+                            "Text" : "" 
+                        },
+                        "ModelTime" : {
+                            "Active" : true ,
+                            "Enabled" : true ,
+                            "Size" : 44 ,
+                            "Family" : "Arial" ,
+                            "Style" : 0 ,
+                            "Color" : "#000000FF" ,
+                            "Bool" : false ,
+                            "Text" : "" 
+                        },
+                        "ViewDip" : false 
+                    },
+                    "Movie" : false ,
+                    "NextMovieIndex" : 1 ,
+                    "JobTitle" : {
+                        "Active" : true ,
+                        "Enabled" : true ,
+                        "Size" : 12 ,
+                        "Family" : "Arial" ,
+                        "Style" : 0 ,
+                        "Color" : "#000000FF" ,
+                        "Bool" : false ,
+                        "Text" : "" 
+                    },
+                    "ViewTitle" : {
+                        "Active" : true ,
+                        "Enabled" : true ,
+                        "Size" : 12 ,
+                        "Family" : "Arial" ,
+                        "Style" : 0 ,
+                        "Color" : "#000000FF" ,
+                        "Bool" : false ,
+                        "Text" : "Plot Title" 
+                    },
+                    "Target" : true 
+                },
+                "GlobalDefault" : {
+                    "Inter1" : {
+                        "Active" : true ,
+                        "Enabled" : true ,
+                        "Width" : 3 ,
+                        "Style" : 1 ,
+                        "Color" : "#ff0000FF" ,
+                        "Bool" : true 
+                    },
+                    "Inter2" : {
+                        "Active" : true ,
+                        "Enabled" : true ,
+                        "Width" : 2 ,
+                        "Style" : 1 ,
+                        "Color" : "#000000FF" ,
+                        "Bool" : true 
+                    },
+                    "Picking" : true ,
+                    "Sketch" : true ,
+                    "UpdateInterval" : 1 ,
+                    "PrintSize" : {
+                        "Width" : 1650 ,
+                        "Height" : 1238 
+                    },
+                    "MovieInterval" : 1000 ,
+                    "MovieExtension" : "png" ,
+                    "MovieSize" : {
+                        "Width" : 1024 ,
+                        "Height" : 768 
+                    },
+                    "MoviePrefix" : "movie_" ,
+                    "DXFWarning" : true ,
+                    "VRMLWarning" : true ,
+                    "MaxLabels" : 128 
+                },
+                "Plots" : [  ],
+                "Entry" : {
+                    "ControlSets" : [ 
+                        {
+                            "Name" : "ItemListControl" ,
+                            "Set" : {
+                                "Index" : 0 ,
+                                "Active" : true ,
+                                "ListCaptionHidden" : false 
+                            }
+                        }, 
+                        {
+                            "Name" : "FishGlobals" ,
+                            "Set" : {
+                                "Index" : 1 ,
+                                "Active" : false 
+                            }
+                        }, 
+                        {
+                            "Name" : "ViewShiftControl" ,
+                            "Set" : {
+                                "Index" : 2 ,
+                                "Active" : true ,
+                                "Hidden" : false 
+                            }
+                        }, 
+                        {
+                            "Name" : "ViewStatsControl" ,
+                            "Set" : {
+                                "Index" : 3 ,
+                                "Active" : true ,
+                                "InfoCaptionHidden" : false 
+                            }
+                        }, 
+                        {
+                            "Name" : "InfoControl" ,
+                            "Set" : {
+                                "Index" : 4 ,
+                                "Active" : true ,
+                                "Hidden" : false 
+                            }
+                        }
+                    ],
+                    "TabState" : [ 
+                        {
+                            "Name" : "Plot01" ,
+                            "TabWidget" : [ 
+                                {
+                                    "States" : [ 
+                                        {
+                                            "First" : "ItemListControl" ,
+                                            "Second" : 4 
+                                        }, 
+                                        {
+                                            "First" : "FishGlobals" ,
+                                            "Second" : 3 
+                                        }, 
+                                        {
+                                            "First" : "ViewShiftControl" ,
+                                            "Second" : 4 
+                                        }, 
+                                        {
+                                            "First" : "ViewStatsControl" ,
+                                            "Second" : 4 
+                                        }, 
+                                        {
+                                            "First" : "InfoControl" ,
+                                            "Second" : 4 
+                                        }
+                                    ],
+                                    "Stretch" : -1 
+                                }
+                            ],
+                            "Active" : true 
+                        }, 
+                        {
+                            "Name" : "+" ,
+                            "TabWidget" : [  ],
+                            "Active" : false 
+                        }
+                    ]
+                },
+                "Views" : [  ]
+            }
+        }, 
+        {
+            "Name" : "Project" ,
+            "Entry" : {
+                "useResults" : true ,
+                "movieOutDir" : "" ,
+                "movieXRes" : 1920 ,
+                "movieYRes" : 1080 ,
+                "resultFiles" : "" ,
+                "saveFiles" : "" ,
+                "plots" : "" ,
+                "datafile" : "" 
+            }
+        }, 
+        {
+            "Name" : "RBlock" ,
+            "Entry" : { }
+        }, 
+        {
+            "Name" : "RBlockThermalModule" ,
+            "Entry" : { }
+        }
+    ],
+    "Terminal" : {
+        "MoveLists" : true ,
+        "LineLimit" : 43 
+    },
+    "ColorMap" : {
+        "EMaps" : [  ]
+    },
+    "Layout" : {
+        "PaneAction" : [ 
+            "Project" ,
+            "IPython Console  " ,
+            "Console" 
+        ],
+        "State" : "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dABfAGcAZQBvAG0AZQB0AHIAeQEAAAAA/////wAAAAAAAAAA+wAAABQAUABsAG8AdABfAGgAaQBzAHQAMQEAAAAA/////wAAAAAAAAAA+wAAABQAUABsAG8AdABfAGgAaQBzAHQAMgEAAAAA/////wAAAAAAAAAA+wAAABQAUABsAG8AdABfAGgAaQBzAHQAMwEAAAAA/////wAAAAAAAAAA+wAAABQAUABsAG8AdABfAGgAaQBzAHQANAEAAAAA/////wAAAAAAAAAA+wAAABQAUABsAG8AdABfAGgAaQBzAHQANQEAAAAA/////wAAAAAAAAAA+wAAACAARQBkAGkAdABvAHIAXwB2AGkAcwBjAHAAbABhAHQAZQEAAAAA/////wAAAAAAAAAA+wAAABgAUABsAG8AdABfAFgAVgBlAGwALQBGADMBAAAAAP////8AAAAAAAAAAPsAAAAcAFAAbABvAHQAXwBYAFYAZQBsAC0AQQBuAGEAbAEAAAAA/////wAAAAAAAAAA+wAAABYAUABsAG8AdABfAFMAWABYAC0ARgAzAQAAAAD/////AAAAAAAAAAD7AAAAGgBQAGwAbwB0AF8AUwBYAFgALQBBAG4AYQBsAQAAAAD/////AAAAAAAAAAD7AAAAGgBFAGQAaQB0AG8AcgBfAGMAYQB2AGUAcgBuAQAAAAD/////AAAAAAAAAAD7AAAAFgBQAGwAbwB0AF8AUwB4AHgAQQBsAGwBAAAAAP////8AAAAAAAAAAPsAAAAQAFAAbABvAHQAXwBTAHgAeAEAAAAA/////wAAAAAAAAAA+wAAABoAUABsAG8AdABfAEgAaQBzAHQARABpAHMAcAEAAAAA/////wAAAAAAAAAA+wAAABIAUABsAG8AdABfAEcAcgBpAGQBAAAAAP////8AAAAAAAAAAPsAAAAeAEUAZABpAHQAbwByAF8AYgBvAHIAZQBoAG8AbABlAQAAAAD/////AAAAAAAAAAD7AAAAFABQAGwAbwB0AF8ARABpAHMAcAAxAQAAAAD/////AAAAAAAAAAD7AAAAFABQAGwAbwB0AF8ARABpAHMAcAAyAQAAAAD/////AAAAAAAAAAD7AAAAFABQAGwAbwB0AF8ARABpAHMAcAAzAQAAAAD/////AAAAAAAAAAD7AAAAHABQAGwAbwB0AF8A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" 
+    },
+    "CPVisible" : true ,
+    "PaneContents" : { }
+}

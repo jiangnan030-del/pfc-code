@@ -1,0 +1,26 @@
+; fname: attributes_and_properties.p3dat
+;
+;  Demonstrate the distinction between ball attributes and ball properties
+;==============================================================================
+model new
+model title 'Attributes and Properties'
+
+; generate a loose assembly of balls 
+model domain extent -10.0 10.0
+model random 10001
+ball generate number 10 radius 0.5 box -0.5 0.5 -0.5 0.5 -9.0 9.0
+
+; set a nonzero x-velocity to part of the balls 
+ball attribute velocity-x 1.0 range position-z -10.0  0.0
+
+; create a property with name 'xvelocity' to the other balls 
+ball property 'velocity-x' 1.0 range position-z   0.0 10.0
+
+; set density and cycle - note that only part of the balls actually moved 
+ball attribute density 1.0
+model mechanical timestep fix 1e-2
+model solve time 2
+
+return
+;==============================================================================
+; eof: attributes_and_properties.p3dat

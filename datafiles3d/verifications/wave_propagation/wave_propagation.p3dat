@@ -1,0 +1,73 @@
+model new
+model title 'Wave Propagation in Particle Assemblies (3D)'
+
+fish define makeTheBar
+  ; given parameters ...
+  NumBalls = 50
+  BallRadius = 0.5
+  BarDensity = 1000.0
+  WaveSpeed = 100.0
+  Freq = 4.0 ; frequency of the pulse
+  Amplitude = 0.1 ; m/sec peak pulse velocity
+  ; derived parameters ...
+  BallDensity = 3.0 * BarDensity / 2.0
+  HalfDensity = BallDensity / 2.0
+  ContactStiff = WaveSpeed*WaveSpeed * math.pi * BarDensity * BallRadius
+  Impedance = math.pi * BallRadius*BallRadius * WaveSpeed * BarDensity
+  ; create the assembly
+  XBall = 0.0
+  loop nn (1,NumBalls)
+    command
+      ball create id=@nn rad=@BallRadius position-x=@XBall 
+    endCommand
+    XBall = XBall + 2.0 * BallRadius
+  endLoop
+  LHAddress  = ball.find(1)
+  MidAddress = ball.find(NumBalls/2)
+  EndAddress = ball.find(NumBalls)
+  check_endvel = 0.0
+end
+
+fish define Wave ; input waveform
+  if mech.time.total > 1.0 / Freq
+    Wave = 0.0
+  else
+    Wave = (1.0 - math.cos(2.0*math.pi*Freq*mech.time.total))*Amplitude / 2.0
+  endif
+end
+
+fish define InputWave
+  whilestepping
+  ball.force.app(LHAddress,1) = Impedance*(2.0 * Wave - ball.vel(LHAddress,1))
+end
+
+fish define LeftHandVelocity
+  LeftHandVelocity = ball.vel(LHAddress,1)
+  MiddleVelocity   = ball.vel(MidAddress,1)
+  EndVelocity      = ball.vel(EndAddress,1)
+  ProblemTime = mech.time.total
+  check_endvel = math.max(check_endvel,EndVelocity)
+end
+
+;---------------------------------------------------------------
+echo off
+model domain extent -2.0 52.0 -2.0 2.0 -2.0 2.0 cond d d d
+contact cmat default model LinearCBond
+@MakeTheBar
+echo=on
+ball attribute density @BallDensity 
+ball attribute density @HalfDensity range id=1
+ball property 'kn' @ContactStiff 
+model clean
+contact method bond
+               
+ball fix velocity-y velocity-z spin-x spin-y spin-z
+history interval 1
+history @LeftHandVelocity 
+history @MiddleVelocity 
+history @EndVelocity 
+history @ProblemTime
+
+model solve elastic only time-total 2.0 
+model save 'wave-final'
+return

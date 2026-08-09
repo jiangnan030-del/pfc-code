@@ -1,0 +1,31 @@
+
+ball attribute force-contact  multiply 0.0  ...
+               moment-contact multiply 0.0  ...
+               velocity multiply 0.0        ...
+               spin multiply 0.0            ...
+               displacement multiply 0.0
+contact cmat default model 'softbond' ...
+                   method deformability emod @emod kratio @kratio ...
+                   property fric @fric  sb_mode 1                 ...
+                            sb_soft @soft sb_cut @cut             
+contact cmat proximity @igap
+model clean all
+contact cmat apply
+
+fish define normal_dist(c,mean,sdev)
+; Return a non-negative value from a normal distribution with
+; given mean and standard deviation.
+;
+  loop while 1 # 0
+    local _val = mean + (math.random.gauss * sdev)
+    if _val >= 0.0 then
+      normal_dist = _val
+      exit
+    end_if
+  end_loop
+end
+
+contact property sb_coh @normal_dist(@coh_mean,@coh_std)
+contact property sb_ten @normal_dist(@ten_mean,@ten_std)
+
+model save [string.build('brick_%1-bonded',tag)]

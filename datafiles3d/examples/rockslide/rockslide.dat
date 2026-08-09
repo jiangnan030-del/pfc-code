@@ -1,0 +1,25 @@
+model restore 'settle'
+model mechanical timestep auto
+
+wall delete range set name 'box'
+rblock attribute damp 0.0
+contact property fric 0.6 dp_nratio 0.5 dp_mode 1 lin_mode 1
+contact cmat default property fric 0.6 dp_nratio 0.5 dp_mode 1 lin_mode 1
+
+model solve time 2.0
+model save 'collapse-2'
+model solve time 2.0
+model save 'collapse-4'
+model solve time 2.0
+model save 'collapse-6'
+model solve time 2.0
+model save 'collapse-8'
+model solve time 2.0
+model save 'collapse-10'
+model solve time 10.0
+model save 'collapse-20'
+model solve time 10.0
+model save 'collapse-30'
+
+program return
+

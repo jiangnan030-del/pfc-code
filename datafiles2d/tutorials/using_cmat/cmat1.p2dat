@@ -1,0 +1,23 @@
+; fname: cmat1.p2dat
+;
+;  Illustrate simple usage of the CMAT 
+;  (All default slots filled with the same data)  
+;==============================================================================
+model new
+model random 10001
+
+model domain extent -1.5e-2 1.5e-2 condition destroy
+wall generate box -1.0e-2 1.0e-2 one-wall
+ball generate number 200 radius 0.4e-3 0.6e-3 box -1.0e-2 1.0e-2 
+ball attribute density 2500.0
+
+; set ALL the default slots of the CMAT
+contact cmat default model linear property kn 1e6 dp_nratio 0.2
+
+model gravity 9.81
+model solve
+model save 'cmat1'
+
+return
+;==============================================================================
+; eof: cmat1.p2dat

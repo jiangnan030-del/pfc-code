@@ -1,0 +1,544 @@
+{
+    "Header" : {
+        "Type" : "ITASCA PROJECT FILE" ,
+        "Name" : "pfc2d" ,
+        "Version" : 600 ,
+        "Update" : 35 ,
+        "Revision" : 0 ,
+        "DateTime" : "2018-08-21T23:28:27" ,
+        "Binary" : false ,
+        "SixtyFour" : true 
+    },
+    "GuiModuleList" : [ 
+        {
+            "Name" : "Terminal" ,
+            "Entry" : {
+                "SaveFile" : "" ,
+                "Kernel" : {
+                    "LoadCommands" : [  ],
+                    "ModuleList" : {
+                        "Modules" : [  ]
+                    },
+                    "Settings" : {
+                        "UpdateInterval" : 100 ,
+                        "Academic" : false ,
+                        "Demonstration" : false ,
+                        "Unrepeatable" : false ,
+                        "ReadOnly" : false 
+                    },
+                    "ProjectRanges" : {
+                        "SelfIndex" : 1 ,
+                        "Contents" : [  ]
+                    }
+                },
+                "SaveFiles" : {
+                    "Files" : [  ]
+                },
+                "ResultFiles" : {
+                    "Files" : [  ]
+                }
+            }
+        }, 
+        {
+            "Name" : "DFN" ,
+            "Entry" : { }
+        }, 
+        {
+            "Name" : "Editor" ,
+            "Entry" : {
+                "DataFiles" : {
+                    "Files" : [ 
+                        "make_sample.p2dat" ,
+                        "doall_parallel.p2dat" ,
+                        "parallel_bonded.p2dat" ,
+                        "ucs.p2dat" ,
+                        "ss_wall.fis" ,
+                        "fracture.p2fis" ,
+                        "tension.p2dat" ,
+                        "ss_gage.fis" ,
+                        "doall_fj.p2dat" ,
+                        "flat_joint.p2dat" 
+                    ]
+                },
+                "OpenFiles" : [ 
+                    "make_sample.p2dat" ,
+                    "doall_parallel.p2dat" ,
+                    "parallel_bonded.p2dat" ,
+                    "ucs.p2dat" ,
+                    "ss_wall.fis" ,
+                    "fracture.p2fis" ,
+                    "tension.p2dat" ,
+                    "ss_gage.fis" 
+                ]
+            }
+        }, 
+        {
+            "Name" : "GUIGeometry" ,
+            "Entry" : { }
+        }, 
+        {
+            "Name" : "GuiPythonModule" ,
+            "Entry" : { }
+        }, 
+        {
+            "Name" : "ItascaModel" ,
+            "Entry" : { }
+        }, 
+        {
+            "Name" : "PFCModule" ,
+            "Entry" : { }
+        }, 
+        {
+            "Name" : "PFCThermalModule" ,
+            "Entry" : { }
+        }, 
+        {
+            "Name" : "Plot" ,
+            "Entry" : {
+                "DefaultPage" : {
+                    "AutoUpdate" : true ,
+                    "Outline" : {
+                        "Active" : true ,
+                        "Enabled" : true ,
+                        "Width" : 2 ,
+                        "Style" : 1 ,
+                        "Color" : "#000000FF" ,
+                        "Bool" : true 
+                    },
+                    "Background" : "#ffffffFF" ,
+                    "Active" : true ,
+                    "Legend" : {
+                        "Active" : true ,
+                        "Placement" : 0 ,
+                        "TargetSize" : {
+                            "Width" : 25 ,
+                            "Height" : 50 
+                        },
+                        "Position" : {
+                            "X" : 66 ,
+                            "Y" : 40 
+                        },
+                        "Title" : {
+                            "Active" : true ,
+                            "Enabled" : true ,
+                            "Size" : 55 ,
+                            "Family" : "Times New Roman" ,
+                            "Style" : 1 ,
+                            "Color" : "#000000FF" ,
+                            "Bool" : true ,
+                            "Text" : "" 
+                        },
+                        "Caption" : {
+                            "Active" : true ,
+                            "Enabled" : true ,
+                            "Size" : 44 ,
+                            "Family" : "Arial" ,
+                            "Style" : 0 ,
+                            "Color" : "#000000FF" ,
+                            "Bool" : true ,
+                            "Text" : "" 
+                        },
+                        "Heading" : {
+                            "Active" : true ,
+                            "Enabled" : true ,
+                            "Size" : 94 ,
+                            "Family" : "Times New Roman" ,
+                            "Style" : 3 ,
+                            "Color" : "#000000FF" ,
+                            "Bool" : true ,
+                            "Text" : "" 
+                        },
+                        "Copyright" : {
+                            "Active" : true ,
+                            "Enabled" : true ,
+                            "Size" : 40 ,
+                            "Family" : "Arial" ,
+                            "Style" : 0 ,
+                            "Color" : "#000000FF" ,
+                            "Bool" : true ,
+                            "Text" : "" 
+                        },
+                        "Step" : {
+                            "Active" : true ,
+                            "Enabled" : true ,
+                            "Size" : 44 ,
+                            "Family" : "Arial" ,
+                            "Style" : 0 ,
+                            "Color" : "#000000FF" ,
+                            "Bool" : false ,
+                            "Text" : "" 
+                        },
+                        "Time" : {
+                            "Active" : true ,
+                            "Enabled" : true ,
+                            "Size" : 44 ,
+                            "Family" : "Arial" ,
+                            "Style" : 0 ,
+                            "Color" : "#000000FF" ,
+                            "Bool" : false ,
+                            "Text" : "" 
+                        },
+                        "Customer" : {
+                            "Active" : true ,
+                            "Enabled" : true ,
+                            "Size" : 44 ,
+                            "Family" : "Arial" ,
+                            "Style" : 0 ,
+                            "Color" : "#000000FF" ,
+                            "Bool" : false ,
+                            "Text" : "" 
+                        },
+                        "View" : {
+                            "Active" : true ,
+                            "Enabled" : true ,
+                            "Size" : 44 ,
+                            "Family" : "Arial" ,
+                            "Style" : 0 ,
+                            "Color" : "#000000FF" ,
+                            "Bool" : false ,
+                            "Text" : "" 
+                        },
+                        "ModelTime" : {
+                            "Active" : true ,
+                            "Enabled" : true ,
+                            "Size" : 44 ,
+                            "Family" : "Arial" ,
+                            "Style" : 0 ,
+                            "Color" : "#000000FF" ,
+                            "Bool" : false ,
+                            "Text" : "" 
+                        },
+                        "ViewDip" : false 
+                    },
+                    "Movie" : false ,
+                    "NextMovieIndex" : 1 ,
+                    "JobTitle" : {
+                        "Active" : true ,
+                        "Enabled" : true ,
+                        "Size" : 12 ,
+                        "Family" : "Arial" ,
+                        "Style" : 0 ,
+                        "Color" : "#000000FF" ,
+                        "Bool" : false ,
+                        "Text" : "" 
+                    },
+                    "ViewTitle" : {
+                        "Active" : true ,
+                        "Enabled" : true ,
+                        "Size" : 12 ,
+                        "Family" : "Arial" ,
+                        "Style" : 0 ,
+                        "Color" : "#000000FF" ,
+                        "Bool" : false ,
+                        "Text" : "View Title" 
+                    },
+                    "Target" : true 
+                },
+                "GlobalDefault" : {
+                    "Inter1" : {
+                        "Active" : true ,
+                        "Enabled" : true ,
+                        "Width" : 3 ,
+                        "Style" : 1 ,
+                        "Color" : "#ff0000FF" ,
+                        "Bool" : true 
+                    },
+                    "Inter2" : {
+                        "Active" : true ,
+                        "Enabled" : true ,
+                        "Width" : 2 ,
+                        "Style" : 1 ,
+                        "Color" : "#000000FF" ,
+                        "Bool" : true 
+                    },
+                    "Picking" : true ,
+                    "Sketch" : true ,
+                    "UpdateInterval" : 100 ,
+                    "PrintSize" : {
+                        "Width" : 1650 ,
+                        "Height" : 1238 
+                    },
+                    "MovieInterval" : 1000 ,
+                    "MovieExtension" : "png" ,
+                    "MovieSize" : {
+                        "Width" : 1024 ,
+                        "Height" : 768 
+                    },
+                    "MoviePrefix" : "movie_" ,
+                    "DXFWarning" : true ,
+                    "VRMLWarning" : true ,
+                    "MaxLabels" : 1024 
+                },
+                "Plots" : [ 
+                    {
+                        "View" : {
+                            "Locked" : false ,
+                            "ModelExtent" :  { "X1" : -1.000000000000000e+0  , "X2" : 1.000000000000000e+0  , "Y1" : -1.000000000000000e+0  , "Y2" : 1.000000000000000e+0 } ,
+                            "ViewExtent" :  { "X1" : 0.000000000000000e+0  , "X2" : 1.000000000000000e+0  , "Y1" : 0.000000000000000e+0  , "Y2" : 1.000000000000000e+0 } ,
+                            "FirstViewAuto" : true ,
+                            "SyncToName" : "Default" 
+                        },
+                        "Properties" : {
+                            "AutoUpdate" : true ,
+                            "Outline" : {
+                                "Active" : true ,
+                                "Enabled" : true ,
+                                "Width" : 2 ,
+                                "Style" : 1 ,
+                                "Color" : "#000000FF" ,
+                                "Bool" : true 
+                            },
+                            "Background" : "#ffffffFF" ,
+                            "Active" : true ,
+                            "Legend" : {
+                                "Active" : true ,
+                                "Placement" : 0 ,
+                                "TargetSize" : {
+                                    "Width" : 25 ,
+                                    "Height" : 50 
+                                },
+                                "Position" : {
+                                    "X" : 66 ,
+                                    "Y" : 40 
+                                },
+                                "Title" : {
+                                    "Active" : true ,
+                                    "Enabled" : true ,
+                                    "Size" : 55 ,
+                                    "Family" : "Times New Roman" ,
+                                    "Style" : 1 ,
+                                    "Color" : "#000000FF" ,
+                                    "Bool" : true ,
+                                    "Text" : "" 
+                                },
+                                "Caption" : {
+                                    "Active" : true ,
+                                    "Enabled" : true ,
+                                    "Size" : 44 ,
+                                    "Family" : "Arial" ,
+                                    "Style" : 0 ,
+                                    "Color" : "#000000FF" ,
+                                    "Bool" : true ,
+                                    "Text" : "" 
+                                },
+                                "Heading" : {
+                                    "Active" : true ,
+                                    "Enabled" : true ,
+                                    "Size" : 94 ,
+                                    "Family" : "Times New Roman" ,
+                                    "Style" : 3 ,
+                                    "Color" : "#000000FF" ,
+                                    "Bool" : true ,
+                                    "Text" : "" 
+                                },
+                                "Copyright" : {
+                                    "Active" : true ,
+                                    "Enabled" : true ,
+                                    "Size" : 40 ,
+                                    "Family" : "Arial" ,
+                                    "Style" : 0 ,
+                                    "Color" : "#000000FF" ,
+                                    "Bool" : true ,
+                                    "Text" : "" 
+                                },
+                                "Step" : {
+                                    "Active" : true ,
+                                    "Enabled" : true ,
+                                    "Size" : 44 ,
+                                    "Family" : "Arial" ,
+                                    "Style" : 0 ,
+                                    "Color" : "#000000FF" ,
+                                    "Bool" : false ,
+                                    "Text" : "" 
+                                },
+                                "Time" : {
+                                    "Active" : true ,
+                                    "Enabled" : true ,
+                                    "Size" : 44 ,
+                                    "Family" : "Arial" ,
+                                    "Style" : 0 ,
+                                    "Color" : "#000000FF" ,
+                                    "Bool" : false ,
+                                    "Text" : "" 
+                                },
+                                "Customer" : {
+                                    "Active" : true ,
+                                    "Enabled" : true ,
+                                    "Size" : 44 ,
+                                    "Family" : "Arial" ,
+                                    "Style" : 0 ,
+                                    "Color" : "#000000FF" ,
+                                    "Bool" : false ,
+                                    "Text" : "" 
+                                },
+                                "View" : {
+                                    "Active" : true ,
+                                    "Enabled" : true ,
+                                    "Size" : 44 ,
+                                    "Family" : "Arial" ,
+                                    "Style" : 0 ,
+                                    "Color" : "#000000FF" ,
+                                    "Bool" : false ,
+                                    "Text" : "" 
+                                },
+                                "ModelTime" : {
+                                    "Active" : true ,
+                                    "Enabled" : true ,
+                                    "Size" : 44 ,
+                                    "Family" : "Arial" ,
+                                    "Style" : 0 ,
+                                    "Color" : "#000000FF" ,
+                                    "Bool" : false ,
+                                    "Text" : "" 
+                                },
+                                "ViewDip" : false 
+                            },
+                            "Movie" : false ,
+                            "NextMovieIndex" : 1 ,
+                            "JobTitle" : {
+                                "Active" : true ,
+                                "Enabled" : true ,
+                                "Size" : 12 ,
+                                "Family" : "Arial" ,
+                                "Style" : 0 ,
+                                "Color" : "#000000FF" ,
+                                "Bool" : false ,
+                                "Text" : "" 
+                            },
+                            "ViewTitle" : {
+                                "Active" : true ,
+                                "Enabled" : true ,
+                                "Size" : 12 ,
+                                "Family" : "Arial" ,
+                                "Style" : 0 ,
+                                "Color" : "#000000FF" ,
+                                "Bool" : false ,
+                                "Text" : "View Title" 
+                            },
+                            "Target" : true 
+                        },
+                        "PlotItems" : [  ],
+                        "ID" : 1 ,
+                        "Name" : "Plot01" 
+                    }
+                ],
+                "Entry" : {
+                    "ControlSets" : [ 
+                        {
+                            "Name" : "ItemListControl" ,
+                            "Set" : {
+                                "Index" : 0 ,
+                                "Active" : true ,
+                                "ListCaptionHidden" : false 
+                            }
+                        }, 
+                        {
+                            "Name" : "FishGlobals" ,
+                            "Set" : {
+                                "Index" : 1 ,
+                                "Active" : false 
+                            }
+                        }, 
+                        {
+                            "Name" : "ViewShiftControl" ,
+                            "Set" : {
+                                "Index" : 3 ,
+                                "Active" : true ,
+                                "Hidden" : false 
+                            }
+                        }, 
+                        {
+                            "Name" : "ViewStatsControl" ,
+                            "Set" : {
+                                "Index" : 4 ,
+                                "Active" : true ,
+                                "InfoCaptionHidden" : false 
+                            }
+                        }, 
+                        {
+                            "Name" : "InfoControl" ,
+                            "Set" : {
+                                "Index" : 5 ,
+                                "Active" : true ,
+                                "Hidden" : false 
+                            }
+                        }
+                    ],
+                    "TabState" : [ 
+                        {
+                            "Name" : "Plot01" ,
+                            "TabWidget" : [ 
+                                {
+                                    "States" : [ 
+                                        {
+                                            "First" : "ItemListControl" ,
+                                            "Second" : 4 
+                                        }, 
+                                        {
+                                            "First" : "FishGlobals" ,
+                                            "Second" : 3 
+                                        }, 
+                                        {
+                                            "First" : "ViewShiftControl" ,
+                                            "Second" : 4 
+                                        }, 
+                                        {
+                                            "First" : "ViewStatsControl" ,
+                                            "Second" : 4 
+                                        }, 
+                                        {
+                                            "First" : "InfoControl" ,
+                                            "Second" : 4 
+                                        }
+                                    ],
+                                    "Stretch" : -1 
+                                }
+                            ],
+                            "Active" : true 
+                        }, 
+                        {
+                            "Name" : "+" ,
+                            "TabWidget" : [  ],
+                            "Active" : false 
+                        }
+                    ]
+                },
+                "Views" : [  ]
+            }
+        }, 
+        {
+            "Name" : "Project" ,
+            "Entry" : {
+                "useResults" : true ,
+                "movieOutDir" : "" ,
+                "movieXRes" : 1920 ,
+                "movieYRes" : 1080 ,
+                "resultFiles" : "" ,
+                "saveFiles" : "" ,
+                "plots" : "" ,
+                "datafile" : "" 
+            }
+        }, 
+        {
+            "Name" : "RBlock" ,
+            "Entry" : { }
+        }
+    ],
+    "Terminal" : {
+        "MoveLists" : true ,
+        "LineLimit" : 12 
+    },
+    "ColorMap" : {
+        "EMaps" : [  ]
+    },
+    "Layout" : {
+        "PaneAction" : [ 
+            "Console" ,
+            "IPython Console  " ,
+            "Project" 
+        ],
+        "State" : "AAAA/wAAAAD9AAAAAQAAAAAAAAaBAAADsfwCAAAAA/wAAAAdAAADsQAAARUA/////AEAAAAC+wAAAB4AUAByAG8AagBlAGMAdABfAFAAcgBvAGoAZQBjAHQBAAAAAAAAAMoAAAB6AP////wAAADOAAAFswAAARkA/////AIAAAAC/AAAAB0AAAKIAAAANQD////8AQAAAAT8AAAAzgAAAiYAAAAAAP////oAAAAAAgAAAAb7AAAAGABFAGQAaQB0AG8AcgBfAGMAbQBhAHQAMQEAAAAA/////wAAAAAAAAAA+wAAABgARQBkAGkAdABvAHIAXwBjAG0AYQB0ADIBAAAAAP////8AAAAAAAAAAPsAAAAYAEUAZABpAHQAbwByAF8AYwBtAGEAdAAzAQAAAAD/////AAAAAAAAAAD7AAAAGABFAGQAaQB0AG8AcgBfAGMAbQBhAHQANAEAAAAA/////wAAAAAAAAAA+wAAABgARQBkAGkAdABvAHIAXwBjAG0AYQB0ADUBAAAAAP////8AAAAAAAAAAPsAAAAYAEUAZABpAHQAbwByAF8AYwBtAGEAdAA2AQAAAAD/////AAAAAAAAAAD8AAAAzgAAAsMAAAAAAP////oAAAAAAQAAAAP7AAAAIgBFAGQAaQB0AG8AcgBfAG0AYQBrAGUAXwBmAGEAdQBsAHQBAAAAAP////8AAAAAAAAAAPsAAAAWAEUAZABpAHQAbwByAF8AbABvAGEAZAEAAAAA/////wAAAAAAAAAA+wAAABgARQBkAGkAdABvAHIAXwBsAG8AYQBkADIBAAAAAP////8AAAAAAAAAAPwAAADOAAAFswAAARkA////+gAAABQCAAAAFvsAAAAWAE0AbwBkAGUAbABfAE0AbwBkAGUAbAEAAAAA/////wAAAAAAAAAA+wAAACIARQBkAGkAdABvAHIAXwBpAG4AYwBsAHUAcwBpAG8AbgBzAQAAAAD/////AAAAAAAAAAD7AAAAFgBQAGwAbwB0AF8AUABsAG8AdAAwADEBAAAAAP////8AAAAZAP////sAAAAoAEUAZABpAHQAbwByAF8AcABsAG8AdAAxAC0AcAByAGkAdgBhAHQAZQEAAAAA/////wAAAAAAAAAA+wAAABYAUABsAG8AdABfAHQAYQBiAGwAZQBzAQAAAAD/////AAAAAAAAAAD7AAAAKABFAGQAaQB0AG8AcgBfAHAAbABvAHQAMwAtAHAAcgBpAHYAYQB0AGUBAAAAAP////8AAAAAAAAAAPsAAAAWAEUAZABpAHQAbwByAF8AdABlAG0AcAEAAAAA/////wAAAAAAAAAA+wAAACYARQBkAGkAdABvAHIAXwBwAGwAbwB0AC0AcAByAGkAdgBhAHQAZQEAAAAA/////wAAAAAAAAAA+wAAABgARQBkAGkAdABvAHIAXwBkAG8AYQBsAGwBAAAAAP////8AAAAAAAAAAPsAAAAiAEUAZABpAHQAbwByAF8AbQBhAGsAZQBfAGIAcgBpAGMAawEAAAAA/////wAAAAAAAAAA+wAAACQARQBkAGkAdABvAHIAXwBtAGEAawBlAF8AaQBuAHQAYQBjAHQBAAAAAP////8AAAAAAAAAAPsAAAAqAEUAZABpAHQAbwByAF8AbQBhAGsAZQBfAGYAcgBhAGMAdAB1AHIAZQBkAQAAAAD/////AAAAAAAAAAD7AAAAFABFAGQAaQB0AG8AcgBfAHUAYwBzAQAAAAD/////AAAAGQD////7AAAAHABFAGQAaQB0AG8AcgBfAHMAcwBfAHcAYQBsAGwBAAAAAP////8AAAAZAP////sAAAAsAEUAZABpAHQAbwByAF8AcABhAHIAYQBsAGwAZQBsAF8AYgBvAG4AZABlAGQBAAAAAP////8AAAAZAP////sAAAAqAEUAZABpAHQAbwByAF8AZABvAGEAbABsAF8AcABhAHIAYQBsAGwAZQBsAQAAAAD/////AAAAGQD////7AAAAJABFAGQAaQB0AG8AcgBfAG0AYQBrAGUAXwBzAGEAbQBwAGwAZQEAAAAA/////wAAABkA////+wAAAB4ARQBkAGkAdABvAHIAXwBmAHIAYQBjAHQAdQByAGUBAAAAAP////8AAAAZAP////sAAAAoAEUAZABpAHQAbwByAF8AZABvAGEAbABsAC0AcAByAGkAdgBhAHQAZQAAAAAA/////wAAAAAAAAAA+wAAABwARQBkAGkAdABvAHIAXwB0AGUAbgBzAGkAbwBuAQAAAAD/////AAAAGQD////7AAAAHABFAGQAaQB0AG8AcgBfAHMAcwBfAGcAYQBnAGUBAAAAAP////8AAAAZAP////sAAAAoAEUAZABpAHQAbwByAF8AYwBoAGUAYwBrAC0AcAByAGkAdgBhAHQAZQAAAAAA/////wAAAAAAAAAA+wAAABYAUABsAG8AdABfAFAAbABvAHQAMAAxAQAAAvgAAAOJAAAAAAAAAAD8AAACqQAAASUAAACBAP////oAAAAAAgAAAAT7AAAAHgBDAG8AbgBzAG8AbABlAF8AQwBvAG4AcwBvAGwAZQEAAAAA/////wAAAIEA////+wAAADIAUwB0AGEAdABlACAAUgBlAGMAbwByAGQAXwBTAHQAYQB0AGUAIABSAGUAYwBvAHIAZAEAAAAA/////wAAAAAAAAAA+wAAACgATABpAHMAdABpAG4AZwBfAEMATQBBAFQALwBkAGUAZgBhAHUAbAB0AQAAAAD/////AAAAAAAAAAD7AAAAKABMAGkAcwB0AGkAbgBnAF8AQwBNAEEAVAAvAGUAbgB0AHIAaQBlAHMBAAAAAP////8AAAAAAAAAAPsAAAA+AEkAUAB5AHQAaABvAG4AIABDAG8AbgBzAG8AbABlAF8ASQBQAHkAdABoAG8AbgAgAEMAbwBuAHMAbwBsAGUAAAAAAP////8AAAAAAAAAAPsAAABGAEkAUAB5AHQAaABvAG4AIABDAG8AbgBzAG8AbABlACAAIABfAEkAUAB5AHQAaABvAG4AIABDAG8AbgBzAG8AbABlACAAIAAAAAAA/////wAAAG0A////AAAA+wAAA7EAAAAEAAAABAAAAAgAAAAI/AAAAAEAAAACAAAAAgAAACoATQBhAGkAbgBXAGkAbgBkAG8AdwBNAGUAbgB1AFQAbwBvAGwAQgBhAHIBAAAAAP////8AAAAAAAAAAAAAAC4ATQBhAGkAbgBXAGkAbgBkAG8AdwBNAG8AZAB1AGwAZQBUAG8AbwBsAEIAYQByAQAAAY7/////AAAAAAAAAAA=" 
+    },
+    "CPVisible" : true ,
+    "PaneContents" : { }
+}

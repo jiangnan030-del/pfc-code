@@ -1,0 +1,123 @@
+; fname: cantilever.p2dat
+;
+; Modeling of cantilever beam using a single row of balls
+; joined by parallel bonds.
+;
+;=============================================================================
+model new
+model random
+
+model domain ext -50 250 -50 50
+contact cmat default model LinearPBond
+
+fish define make_cantilever
+  global _x = 0.0
+  global _ballcnt = 1
+  loop _ballcnt (1,11)
+    command
+      ball create id @_ballcnt rad 10 pos(@_x,0) 
+    end_command
+    _x = _x + 20.0
+  end_loop
+  global bp_11 = ball.find(11)
+end
+
+; ----- Apply load(s) to ball 11 (at tip)
+fish define apply_loads(_f,_m,_p)
+  ball.force.app.y(bp_11) = _f
+  ball.moment.app(bp_11)  = _m 
+  ball.force.app.x(bp_11) = _p
+end
+; ----- Find total x- and y-displacement of ball 11.
+fish define _xdel11
+  _xdel11  = ball.pos(bp_11,1) - 200.0
+  _ydel11  = ball.pos(bp_11,2)
+  _rot11   = ball.rotation(bp_11)*math.degrad
+end
+; ----- Find maximum p.b. stresses and their locations
+; out of all p.b. in the model
+; OUTPUT VARS:
+; _maxpbnstr : max nstress
+; _maxpbsstr : max sstress
+; _maxpbnx : x coord. of p.b. with max nstress
+; _maxpbsx : x coord. of p.b. with max sstress
+;
+fish define get_maxpbstr
+  global _maxpbnstr = -1.0
+  global _maxpbsstr = -1.0
+  global _maxpbnx = -1.0
+  global _maxpbsx = -1.0
+  loop foreach local cp contact.list
+    if contact.prop(cp,"pb_state") = 3 then
+      local rad = ...
+         math.min(ball.radius(contact.end1(cp)),ball.radius(contact.end2(cp)))
+      local br = contact.prop(cp,"pb_rmul") * rad
+      local barea = math.pi*br*br                ; treat as spheres  
+      local bi = 0.25*barea*br*br           ; treat as spheres
+      local bmfac = contact.prop(cp,"pb_mcf")
+      local bf    = contact.prop(cp,"pb_force")
+      local bfm   = contact.prop(cp,"pb_moment")
+      local nsmax = - comp.x(bf) / barea  + bmfac * math.abs(bfm) *br/bi
+      local ssmax =   math.abs(comp.y(bf)) / barea
+      if nsmax > _maxpbnstr then
+        _maxpbnstr = nsmax
+        _maxpbnx = contact.pos(cp,1)
+      end_if
+      if ssmax > _maxpbsstr then
+        _maxpbsstr = ssmax
+        _maxpbsx = contact.pos(cp,1)
+      end_if
+    end_if
+  end_loop
+end
+; ----- Begin execution here
+@make_cantilever
+; ----- Set model properties
+; (Note that pb_n and pb_s are set to extremely large
+; values so that inertial effects arising from the
+; instantaneous application of the final loads do
+; not cause the parallel bonds to break.)
+ball ini dens=1000 damp 0.7
+ball prop 'kn'=16000 'ks'=16000
+model clean
+
+; ----- Add parallel bonds
+contact method bond
+contact property pb_ten 1e5 pb_coh 1e5 pb_kn 500 pb_ks 188 pb_rmul 0.8
+ball fix velocity-x velocity-y spin range id=1
+
+; ----- History variables
+fish history @_xdel11
+fish history @_ydel11
+fish history @_rot11
+model history mechanical time-total
+model orientation-tracking on
+
+model save 'initial'
+
+@apply_loads(1.0,100.0,0.0)
+model solve ratio-max 1e-5
+@get_maxpbstr
+list @_xdel11 @_ydel11 @_rot11 @_maxpbnstr @_maxpbsstr @_maxpbnx @_maxpbsx
+model save 'final-case1'
+
+
+model restore 'initial'
+@apply_loads(0.0,0.0,1000.0)
+model solve ratio-max 1.0e-5
+model save 'final-case2'
+
+model restore 'initial'
+contact method unbond
+@apply_loads(0.0,0.0,-1000.0)
+model solve ratio-max 1.0e-5
+model save 'final-case3'
+
+model restore 'initial'
+@apply_loads(0.0,0.0,-1000.0)
+model solve ratio-max 1.0e-5
+model save 'final-case4'
+
+;=============================================================================
+program return
+; eof: cantilever.p2dat

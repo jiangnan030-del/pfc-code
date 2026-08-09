@@ -1,0 +1,60 @@
+; fname: ss_gage.fis
+;
+;  Fish functions to record strain using gage balls
+;========================================================
+fish def setup_gage
+; 
+; Find gage particles to record axial strain when there are no walls
+; and set initial sample height
+;
+
+  global vertical_direction = global.dim
+  
+  ; assume x and y are approximately the same in 3D
+  local bottom_ = 1.0e12
+  local top_ = -1.0e12
+  loop foreach bp ball.list
+    top_ = math.max(ball.pos(bp,vertical_direction),top_)
+    bottom_ = math.min(ball.pos(bp,vertical_direction),bottom_)
+  end_loop
+  if global.dim = 2
+    local top_loc = vector(0.0,top_)
+    local bottom_loc = vector(0.0,bottom_)
+  else
+    top_loc = vector(0.0,0.0,top_)
+    bottom_loc = vector(0.0,0.0,bottom_)
+  end_if
+  
+  global gage_top = ball.near(top_loc)
+  global gage_bottom = ball.near(bottom_loc)
+  global sample_height = ball.pos(gage_top,vertical_direction) - ball.pos(gage_bottom,vertical_direction)
+end
+;========================================================
+fish def axial_strain_gage
+;
+; Compute axial strain using gage balls (positive tension)
+;
+; Assumes global variables gage_top, gage_bottom and sample_height have been set
+;
+  axial_strain_gage = (ball.disp(gage_top,vertical_direction) - ball.disp(gage_bottom,vertical_direction))/sample_height
+end
+;==========================================================
+fish def loadhalt_meas
+;
+; Function used to stop a test when axial stress decreases to some fraction of the peak
+; Assumes measurement circle 1 is installed
+; 
+; INPUT: peak_fraction - fraction of peak stress that dictates the stopping of the test
+;                        (global float)
+;
+  global peak_fraction
+  loadhalt_meas = 0
+  local mp = measure.find(1)
+  local abs_stress = math.abs(meas.stress(mp,global.dim,global.dim))
+  global peak_stress = math.max(abs_stress,peak_stress)
+  if abs_stress < peak_stress*peak_fraction
+    loadhalt_meas = 1
+  end_if
+end
+;==============================================================================
+; eof: ss_gage.fis

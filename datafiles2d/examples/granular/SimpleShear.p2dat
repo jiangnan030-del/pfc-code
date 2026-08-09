@@ -1,0 +1,47 @@
+wall servo activate off
+fish callback remove @servo_walls 1.0 
+
+;define ball and wall friction property
+ball property 'fric' @ballFriction
+wall property 'fric' @wallFriction
+
+[rate = 1.0]
+wall attribute velocity-x [ 1.0*rate*wly] range set name 'vesselTop'
+wall attribute rotation-center [-0.5*wlx] [-0.5*wly] ...
+               spin [-1.0*rate] range set name 'vesselLeft'
+wall attribute rotation-center [0.5*wlx] [-0.5*wly] ...
+               spin [-1.0*rate] range set name 'vesselRight'
+
+[defxy = 0]
+fish define shear_strain
+  defxy = defxy + rate*global.timestep
+end
+
+@ini_mstrain(1)
+
+fish history name 11 @xxmstrain
+fish history name 12 @xymstrain
+fish history name 13 @yxmstrain
+fish history name 14 @yymstrain
+
+measure history name 31 stress-xx id 1 
+measure history name 32 stress-xy id 1 
+measure history name 33 stress-yx id 1 
+measure history name 34 stress-yy id 1
+
+fish history name 61 @asxy
+fish history name 51 @defxy
+
+@ini_gstrain(@wly)
+fish history name 21 @xygstrain
+fish history name 22 @xygstrain12
+fish history name 23 @xygstrain13
+fish history name 24 @xygstrain14
+
+fish callback add @shear_strain          2.0 
+fish callback add @accumulate_mstrain    11.0 
+fish callback add @compute_averagestress 43.0 
+
+model orientation-tracking on
+    
+model solve time 0.01

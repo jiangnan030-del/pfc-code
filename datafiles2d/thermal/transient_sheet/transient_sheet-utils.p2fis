@@ -1,0 +1,159 @@
+;fname: transient_sheet-utils.p2fis
+;
+; Itasca Consulting Group, Inc.
+; ==============================================================================
+; Utility functions for thermal option verification problems
+; ==============================================================================
+;
+; ------------------------------------------------------------------------------
+fish define close_pack(nrow_,ncol_,type_)
+  global xc   = x0
+  global yc   = y0
+  global rc   = radius
+  global idc  = id_start
+  local r2   = 2.0 * rc
+  global dom_xmin = x0 - 4.0 *r2
+  global dom_xmax = x0 + ncol_*r2 + 4.0 *r2
+  global dom_ymin = y0 - 4.0 *r2
+  global dom_ymax = y0 + nrow_*r2 + 4.0 *r2
+  
+  command
+    model domain extent @dom_xmin @dom_xmax @dom_ymin @dom_ymax
+  endcommand
+  
+  case_of type_
+    case 1
+      yinc = radius * 2.0
+    case 2
+      yinc = radius * math.sqrt(3.0)
+  end_case
+  loop local row (1,nrow_)
+    loop local col (1,ncol_)
+      command
+        ball create id=@idc position-x=@xc position-y=@yc ...
+                    radius=[rc*(1 + epsilon)]
+      end_command
+      idc = idc + 1
+      xc   = xc + r2
+    end_loop
+    yc = yc + yinc
+    case_of type_
+      case 1
+        xc = x0
+      case 2
+        xc = x0 + radius * (row - (row/2) * 2)
+    end_case
+  end_loop
+  
+  final_params
+  therm_props
+  therm_bcs
+end
+; ------------------------------------------------------------------------------
+fish define final_params
+  global c_len = (n_col-1)*2.0*radius
+end
+; ------------------------------------------------------------------------------
+fish define therm_props
+;
+  if _pack_type = 1 then
+    poros = 1.0 - (math.pi/4.0)
+    _eta = 1.0 / (2.0 * c_k * radius)
+  else
+    poros = 1.0 - math.pi/(2.0*math.sqrt(3.0))
+    _eta = 3.0 / (2.0*math.sqrt(3.0) * c_k * radius)
+  end_if
+  _dens = c_dens / (1.0 - poros)
+  command
+    contact cmat default model Linear
+    contact cmat thermal default model ThermalPipe property thres=@_eta
+    contact cmat thermal default inherit thres off
+    ball attribute density=@_dens
+    ball thermal attribute specific-heat=@c_cv
+    model clean
+  end_command
+end
+; ------------------------------------------------------------------------------
+fish define therm_bcs
+;
+  global _xl1 = -0.01*radius
+  global _xr1 = _xl1 + 1.01*radius
+  global _xl2 = c_len - 0.01*radius
+  global _xr2 = _xl2 + 1.01*radius
+  command
+    ball thermal init temp 0.0
+    ball thermal init temp @t1 range position-x=(@_xl1, @_xr1) ; left side
+    ball thermal fix  range position-x=(@_xl1, @_xr1) ; left side
+    ball thermal fix  range position-x=(@_xl2, @_xr2) ; right side
+  end_command
+end
+; ------------------------------------------------------------------------------
+fish define num_soln
+;
+; ----- Numerical solution (along bottom row of balls)
+  global tname = string.build("Numerical sol. - age = %1",thermal.time.total)
+  local t = table.create(tabe)
+  table.label(t) = tname
+  tabe +=2
+  
+  loop foreach local btp ball.thermal.list
+    local bp = ball.thermal.ball(btp)
+    if ball.pos(bp,2) = 0.0 then
+      local _z = ball.pos(bp,1)
+      local _tz = _z / c_len
+      table(t, _tz) = ball.thermal.temp(btp) / t1
+    end_if
+  end_loop
+end
+; ------------------------------------------------------------------------------
+fish define ana_soln
+;
+; ----- Analytical solution (along bottom row of balls).
+;       Do not test for convergence, just take the first [n_tot] terms.
+  global tname = string.build("Analytical sol. - age = %1",thermal.time.total)
+  local t = table.create(tabn)
+  table.label(t) = tname
+  tabn +=2
+  loop foreach local btp ball.thermal.list
+    local bp = ball.thermal.ball(btp) 
+    if ball.pos(bp,2) = 0.0 then
+      local _z = ball.pos(bp,1)
+      local n = 0
+      local tsum = 0.0
+      loop while n < n_tot
+        n = n + 1
+        fn = float(n)
+        local term = math.sin(math.pi*_z*fn/c_len)
+        term = term * math.exp(-c_kappa*fn*fn*math.pi*math.pi*thermal.time.total/(c_len*c_len))/fn
+        tsum = tsum + term
+      end_loop
+      _tz = _z / c_len
+      table(t, _tz) = 1.0 - _z/c_len - (2.0/math.pi)*tsum
+    end_if
+  end_loop
+end
+; ------------------------------------------------------------------------------
+fish define init_params
+  global id_start=1
+  global x0 = 0.0
+  global y0 = 0.0
+  global radius  = 1.0
+  global epsilon = 1.0e-6
+  ;
+  global c_k = 1.6                      ; conductivity
+  global c_cv = 0.2                     ; specific heat
+  global c_dens = 1000.0                ; density
+  global c_kappa = c_k / (c_dens*c_cv)
+  global t1 = 100.0                     ; temperature along left side
+  global tabn_start = 10
+  global tabe_start = 11
+  global tabn = tabn_start
+  global tabe = tabe_start
+  global n_row = 10
+  global n_col = 50
+  global _pack_type = 1
+  global n_tot = 100   ; number of terms of analytical solution to use
+end
+; ===================================================================
+return
+;EOF: transient_sheet-utils.p2fis

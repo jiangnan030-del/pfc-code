@@ -1,0 +1,80 @@
+; fname: MeasureLogic.p3dat
+;
+; Exercise the Mechanical Ball integration to the Measure Logic with PFC. 
+; Porosity is computed using measurement spheres with random radii. 
+; Results for different model resolutions are compared against closed 
+; form solutions.
+;
+; Itasca Consulting Group, Inc.
+;
+; ============================================================================
+
+fish def define_meas_parameters(nmeas, pcntg)
+; ARGUMENTS: 
+;  - nmeas : integer value that indicates the number of randomly-placed 
+;            probing measurement circles that will be created
+;            You may vary this parameter to see the effects on the final result
+;  - pcntg : 'percentage' argument of the MEASURE function
+; 
+  global p = pcntg
+  global n = nmeas
+end
+
+
+fish def compute_meas_center(r)
+;Randomly computes the coordinates of the measurement sphere center
+;ARGUMENTS:
+;  - r : radius of the measurement sphere
+;
+  local xcmin = xmin+r
+  local xcmax = xmax-r
+  local ycmin = ymin+r
+  local ycmax = ymax-r
+  local zcmin = zmin+r
+  local zcmax = zmax-r
+  global xc = xcmin + (xcmax - xcmin)*math.random.uniform
+  global yc = ycmin + (ycmax - ycmin)*math.random.uniform
+  global zc = zcmin + (zcmax - zcmin)*math.random.uniform
+end
+
+
+fish define create_meas_regions
+  measradius = array.create(n)
+  local maxmeasradius = math.min((0.99*(zmax-zmin)),  ...
+                        math.min((0.99*(xmax-xmin)),  ...
+                        (0.99*(ymax-ymin))))
+  loop ii(1,n)
+    measradius(ii) = ...
+          math.max(maxmeasradius/15,math.random.uniform*(0.5*(maxmeasradius)))
+  end_loop
+  loop ii(1,n)
+    command
+      @compute_meas_center([measradius(ii)])
+      measure create position-x @xc position-y @yc position-z ...
+                                @zc radius [measradius(ii)] tolerance @p
+    end_command
+  end_loop
+end
+
+fish define check_error(val,t,averageradius)
+; Compares porosities computed in the measurement circles
+; with analytical values
+; ARGUMENTS: 
+;   - val: exact value of the porosity
+;   - t: name of the table with the final numerical results
+;
+  global result = table.create(t)
+  local it = 0
+  local averageerror = 0
+  loop foreach local mp measure.list
+    it = it + 1
+    local res = measure.porosity(mp)
+    local diff = 100.0 * (res - val) / val
+    averageerror = averageerror + math.abs(diff)
+    table(t,math.abs(diff))=measradius(it)/averageradius
+  endloop
+  global check_error = averageerror/it
+end
+
+; ============================================================================
+; EoF: MeasureLogic.p3dat

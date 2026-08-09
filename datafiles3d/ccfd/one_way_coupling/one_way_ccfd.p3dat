@@ -1,0 +1,39 @@
+new
+set fish autocreate off
+
+domain extent 0 2 cond p
+
+wall gen box 0 1 0 1 0 2
+wall prop kn 1e2 ks 1e2 fric 0.25
+wall delete walls range id 1 2
+set gravity 0 0 -9.81 
+
+config ccfd
+
+ccfd read nodes Node.dat
+ccfd read ele Elem.dat
+
+element ccfd ini density 1e3
+element ccfd ini visc 1e-3
+
+element ccfd ini xvel 0.0
+element ccfd ini yvel 0.0
+element ccfd ini zvel 0.0
+
+def set_fluid_velocity
+  loop foreach local ele element.ccfd.list
+    element.ccfd.vel.x(ele) = 0.0
+    element.ccfd.vel.y(ele) = 0.0
+    element.ccfd.vel.z(ele) = 0.0
+  end_loop
+end
+@set_fluid_velocity
+
+ball create rad 0.03 position-x 0.5 position-y 0.3  position-z 1.5
+ball create rad 0.05 position-x 0.5 position-y 0.5  position-z 1.5
+ball create rad 0.07 position-x 0.5 position-y 0.7  position-z 1.5
+
+ball ini dens 1.1e3
+ball prop kn 1e2 ks 1e2 fric 0.25
+
+cycle 350

@@ -1,0 +1,14 @@
+;restore specimen
+
+;measure create id 1 radius [0.4*math.min(wlx,wly)]
+;list measure
+
+;set echo off
+;  call 004_stress_utilities.p2fis
+;set echo on
+
+@compute_averagestress
+;@compute_wallstress
+@compute_spherestress([0.3*math.min(wlx,wly)])
+
+return

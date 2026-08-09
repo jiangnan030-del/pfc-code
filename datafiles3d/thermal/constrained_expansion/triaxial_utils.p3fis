@@ -1,0 +1,141 @@
+fish define expand_walls(fac)
+  ; expand walls
+  loop local i(1,2)
+    loop foreach local vertex  wall.vertexlist(wall.find(i))
+      wall.vertex.pos.x(vertex) = fac*wall.vertex.pos.x(vertex)
+      wall.vertex.pos.y(vertex) = fac*wall.vertex.pos.y(vertex)
+    endloop
+  endloop  
+  loop i(3,4)
+    loop foreach vertex  wall.vertexlist(wall.find(i))
+      wall.vertex.pos.y(vertex) = fac*wall.vertex.pos.y(vertex)
+      wall.vertex.pos.z(vertex) = fac*wall.vertex.pos.z(vertex)
+    endloop
+  endloop  
+  loop i(5,6)
+    loop foreach vertex  wall.vertexlist(wall.find(i))
+      wall.vertex.pos.x(vertex) = fac*wall.vertex.pos.x(vertex)
+      wall.vertex.pos.z(vertex) = fac*wall.vertex.pos.z(vertex)
+    endloop
+  endloop  
+  ; store global wall pointers for later use
+  global wbot = wall.find(1)
+  global wtop = wall.find(2)
+  global wleft = wall.find(3)
+  global wright = wall.find(4)
+  global wfront = wall.find(5)
+  global wback = wall.find(6)
+end
+
+fish define wlx
+  wlx = wall.pos.x(wright)  - wall.pos.x(wleft)
+end
+
+fish define wly
+  wly = wall.pos.y(wback)  - wall.pos.y(wfront)
+end
+
+fish define wlz
+  wlz = wall.pos.z(wtop)  - wall.pos.z(wbot)
+end
+
+fish define ini_measure
+  global mp = measure.find(1)
+  global mstrains = matrix(3,3)
+end
+
+fish define smxx
+  smxx = measure.stress.xx(mp)
+end
+
+fish define smyy
+  smyy = measure.stress.yy(mp)
+end
+
+fish define smzz
+  smzz = measure.stress.zz(mp)
+end
+
+fish define accumulate_mstrains
+  global msrate =  measure.strain.rate(mp)
+  global mstrains = mstrains + msrate * global.timestep
+  global emxx= mstrains(1,1)
+  global emyy= mstrains(2,2)  
+  global emzz= mstrains(3,3)  
+end
+
+fish define compute_gain(fac)
+  global gx = 0.0
+  global gy = 0.0
+  global gz = 0.0  
+  ; bottom wall
+  loop foreach contact wall.contactmap.all(wbot)
+    gz = gz + contact.prop(contact,"kn")
+  endloop
+  ; top wall
+  loop foreach contact wall.contactmap.all(wtop)
+    gz = gz + contact.prop(contact,"kn")
+  endloop
+  ; left wall
+  loop foreach contact wall.contactmap.all(wleft)
+    gx = gx + contact.prop(contact,"kn")
+  endloop
+  ; right wall
+  loop foreach contact wall.contactmap.all(wright)
+    gx = gx + contact.prop(contact,"kn")
+  endloop
+  ; front wall
+  loop foreach contact wall.contactmap.all(wfront)
+    gy = gy + contact.prop(contact,"kn")
+  endloop
+  ; back wall
+  loop foreach contact wall.contactmap.all(wback)
+    gy = gy + contact.prop(contact,"kn")
+  endloop
+
+  gx = fac * (wly*wlz) / (gx * global.timestep)
+  gy = fac * (wlx*wlz) / (gy * global.timestep)
+  gz = fac * (wlx*wly) / (gz * global.timestep)
+end
+
+fish define swxx
+  swxx = 0.5*(wall.force.contact(wleft,1) - wall.force.contact(wright,1)) / (wly*wlz)
+end
+
+fish define swyy
+  swyy = 0.5*(wall.force.contact(wfront,2) - wall.force.contact(wback,2)) / (wlx*wlz)
+end
+
+fish define swzz
+  swzz = 0.5*(wall.force.contact(wbot,3) - wall.force.contact(wtop,3)) / (wlx*wly)
+end
+
+fish define ewxx
+  ewxx = (wlx - wlx0)/wlx0
+end
+
+fish define ewyy
+  ewyy = (wly - wly0)/wly0
+end
+
+fish define ewzz
+  ewzz = (wlz - wlz0)/wlz0
+end
+
+
+fish define servo_walls
+  xvel = gx*(tsl - swxx)
+  xvel = math.sgn(xvel) * math.min(5e-1,math.abs(xvel)) 
+  wall.vel.x(wright) = xvel
+  wall.vel.x(wleft) = - xvel
+  yvel = gy*(tsl - swyy)
+  yvel = math.sgn(yvel) * math.min(5e-1,math.abs(yvel)) 
+  wall.vel.y(wback) = yvel
+  wall.vel.y(wfront) = - yvel
+  if do_zservo = true then
+    zvel = gz*(tsa - swzz)
+    zvel = math.sgn(zvel) * math.min(5e-1,math.abs(zvel)) 
+    wall.vel.z(wtop) = zvel
+    wall.vel.z(wbot) = - zvel
+  endif
+end

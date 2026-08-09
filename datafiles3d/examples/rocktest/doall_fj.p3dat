@@ -1,0 +1,24 @@
+; fname: doall_fj.p3dat
+;
+;  Create and test flat joint material
+;==============================================================================
+
+; restore unbonded specimen and install flatjoint model
+call 'flat_joint.p3dat'
+
+log-file 'fj3d.log'
+log on
+
+; run ucs test
+call 'ucs.p3dat'
+model save 'fj_ucs'
+
+; run tension test
+model restore 'flatjoint'
+call 'tension.p3dat'
+model save 'fj_tension'
+
+log off
+
+;==============================================================================
+; eof: doall_fj.p3dat

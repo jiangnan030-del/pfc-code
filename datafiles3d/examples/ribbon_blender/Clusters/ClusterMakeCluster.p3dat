@@ -1,0 +1,129 @@
+; fname: ClusterMakeCluster.p3dat
+
+fish define ini_clusters
+  global cluster_head = null
+  global bnumber=0
+  clt = clump.template.find('pill')
+  loop foreach p clump.template.pebblelist(clt)
+    bnumber = bnumber + 1
+  endloop
+  io.out(string.build("number of pebbles = %1", bnumber))
+end
+
+fish define make_cluster(clump)
+  ; replace a clump with a set of balls
+  newclus = memory.create(bnumber+3)
+  memory(newclus) = cluster_head
+  cluster_head = newclus
+  global idc = clump.id(clump)
+  local num=1
+  memory(newclus+num) = idc
+  num=num+1
+  loop foreach local p clump.pebblelist(clump)
+    global prad = clump.pebble.radius(p)
+    global ppos = clump.pebble.pos(p)
+    global idp = clump.pebble.id(p)
+    command
+      ball create id @idp rad @prad pos @ppos
+    endcommand
+    num = num + 1
+    local bp = ball.find(idp)
+    if num>3
+      if comp.x(ball.pos(bp)) < comp.x(ball.pos(bfirst))
+        bfirst = bp
+      endif
+    else 
+      bfirst = bp
+    endif
+    ball.extra(bp,1) = idc
+    memory(newclus+num) = bp
+  endloop
+  memory(newclus+2) = bfirst
+  clump.delete(clump)
+end
+
+fish define replace
+  loop foreach clump clump.list
+    make_cluster(clump)
+  endloop
+end
+
+fish define order_clusters
+  cluster = cluster_head
+  loop while cluster # null
+    newcluster = array.create(9)
+    newcluster(1) = memory(cluster+2)
+    loop j(2,9)
+        referenceball = newcluster(j-1)
+        dist=1000
+        loop i(1,bnumber)
+          thisball = memory(cluster+2+i)
+          newdist = comp.x(ball.pos(thisball))-comp.x(ball.pos(referenceball))
+          io.out(string.build("newdist = %1",newdist))
+          if newdist > 0
+            if newdist < dist
+              nearestball = thisball
+              dist = newdist
+            endif
+          endif
+        endloop
+        newcluster(j) = nearestball
+    endloop
+    loop i(1,bnumber)
+      memory(cluster+i+2) = newcluster(i)
+    endloop
+    cluster = memory(cluster)
+  endloop
+end
+
+fish define list_clusters
+  cluster = cluster_head
+  loop while cluster # null
+    local idc = memory(cluster+1)
+    local bleft = memory(cluster+2)
+    io.out(string.build("--cluster with ID %1 : ",idc))
+    io.out(string.build("--left most ball id : %1",ball.id(bleft)))
+    loop i(1,bnumber)
+       bp = memory(cluster+i+2)
+       io.out(string.build("    - ball id %1",ball.id(bp)))
+    endloop
+    cluster = memory(cluster)
+  endloop
+end
+
+fish def applybonds
+    cluster = cluster_head
+    loop while cluster # null
+        loop i(1,bnumber-1)
+            bp = memory(cluster+i+2)
+            bp_next=memory(cluster+i+3)
+            local clist = ball.contactmap(bp)
+            section
+                loop foreach local con clist
+                    ok=0
+                    if contact.end1(con) = bp_next
+                        ok=1
+                    else if contact.end2(con) = bp_next
+                        ok=1
+                    endif
+                    if ok=1
+                        local arg = array.create(1,2)
+                        arg(1,1) = 'gap'
+                        arg(1,2) = 0.0
+                        contact.method(con,"bond",arg)
+                        contact.prop(con,"pb_kn")=1e12
+                        contact.prop(con,"pb_ks")=1e12
+                        contact.prop(con,"pb_ten")=1e8
+                        contact.prop(con,"pb_coh")=1e6
+                        contact.prop(con,"pb_rmul")=0.8
+                        exit section
+                    endif
+                endloop
+            endsection
+        endloop
+        cluster = memory(cluster)
+    endloop
+end
+
+;=============================================================================
+; eof: ClusterMakeCluster.p3dat

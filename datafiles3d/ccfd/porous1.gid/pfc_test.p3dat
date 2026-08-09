@@ -1,0 +1,31 @@
+
+;new
+;res final.sav
+
+def numbers
+  local nballs = 4*4*4
+  local ele = element.cfd.near(0, 0, 0)      ; get center element address
+  local vy = element.cfd.vel.y(ele)          ; y component of fluid velocity
+  local por = element.cfd.porosity(ele)      ; element porosity
+  local mu = element.cfd.viscosity(ele)      ; dynamic viscosity of fluid
+  local rho = element.cfd.density(ele)       ; density of fluid
+  local r = ball.radius(ball.find(1))         ; particle radius
+  local rep = 2*rho*r*vy/mu                   ; particle Reynolds' number
+  local cd =(0.63+4.8/math.sqrt(rep))^2       ; drag coefficient
+  local chi = 3.7-0.65*math.exp(-(1.5-math.log(rep))^2/2.) ; coefficient
+  local f0 = 0.5*cd*rho*math.pi*r^2*vy^2      ; force without porosity correction
+  local f = -nballs*f0*por^(-chi)
+  local oo=io.out('total element force expected : ' + string(f))
+  local fc = element.cfd.dragforce.y(ele)
+  oo=io.out('total element force calculated: ' + string(fc))
+
+  local KCperm = 1/180.*por^3/(1-por)^2*(2*r)^2
+  local dx = 0.1
+  local dp = 1.0e2
+  local gradp=dp/dx
+
+  local uKC = KCperm * gradp / mu
+  oo=io.out('velocity predicted by Kozeny-Carman relation: ' + string(uKC))
+  oo=io.out('velocity output from model: ' + string(vy))
+end
+@numbers

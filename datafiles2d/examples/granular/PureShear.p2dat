@@ -1,0 +1,56 @@
+wall servo activate off
+fish callback remove @servo_walls 1.0 
+
+;define ball and wall friction property
+ball property 'fric' @ballFriction
+wall property 'fric' @wallFriction
+
+[ly0 = wly]
+[lx0 = wlx]
+
+[defxy = 0]
+[tauxy = 0]
+fish define shear_strain_stress
+  x_strain = (wlx-lx0)
+  y_strain = (wly-ly0)
+  defxy = x_strain/ly0 + y_strain/lx0
+  tauxy = (wsxx-wsyy)/2
+end
+
+[load = 1]
+[rate = 0.001]
+[xfactor = 0.0]
+[yfactor = 0.0]
+fish define cyclic_shear
+  wall.vel.x(wp_left)  =        xfactor*rate ; left wall
+  wall.vel.x(wp_right) = -1.0 * xfactor*rate ; right wall
+  wall.vel.y(wp_top)   = -1.0 * yfactor*rate ; top wall
+  wall.vel.y(wp_bot)   =        yfactor*rate ; bottom wall
+  if defxy < 0.0005
+    if load = 1
+      xfactor = 1.0
+      yfactor = -2.0
+      exit
+    else
+      if defxy < -0.0005
+        load = 1
+        exit
+      endif
+      exit
+    endif
+  else
+    xfactor = -1.0
+    yfactor = 2.0
+    load = 0
+  endif
+end
+
+fish history name 51 @tauxy
+fish history name 61 @defxy
+
+fish callback add @shear_strain_stress 2.0 
+fish callback add @cyclic_shear        3.0 
+
+model orientation-tracking on
+
+model solve time 0.2

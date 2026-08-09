@@ -1,0 +1,37 @@
+; fname: Lining.p3dat
+;
+;  Installation of a lining support for the tunnel
+;==============================================================================
+
+model restore 'StableTunnel'
+
+; A lining support is installed around the excavation by specifying a higher 
+; cohesion and tensile strength to contacts around the Tunnel.
+
+; A group of contacts named 'Lining' is created
+contact group 'Lining' range cylinder end-1 (16.0,-6.0,6.0) ...
+        end-2 (16.0,6.0,6.0) radius 4.0
+
+; A new set of properties is defined for the contacts of the group 'Lining'
+contact property fric 0.18 kn 1e8 ks 1e8            ...
+        pb_kn 1e8 pb_ks 1e8 pb_ten 1e10             ...
+        pb_coh 1e10 pb_rmul 1.0 dp_nratio 0.2       ...
+        range group 'Lining'
+
+; The assembly is loaded again by the footing. Which differences with respect
+; to the case of the unlined tunnel?
+wall attribute velocity-z -0.25 range group 'footing'
+
+model save 'Lining'
+
+model mechanical timestep auto
+model solve time 10.0
+
+; Solve to an equilibrium state again
+wall attribute velocity-z 0.0
+model solve ratio-average 1e-5
+
+model save 'LinedTunnel'
+
+;==============================================================================
+; eof: Lining.p3dat

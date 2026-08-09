@@ -1,0 +1,39 @@
+fish define make_movie_case1
+  command
+    program echo off
+    model result map @track_map
+  endcommand
+  local count = 1
+  loop foreach local value track_map
+    global fname = string.build('fragments_case1_%1.png',count)
+    command
+      model domain extent -10 10
+      model result import @count skip-fish
+      plot 'system' export bitmap filename @fname 
+    endcommand
+    count += 1
+  endloop
+  command
+    program echo on
+  endcommand
+end
+
+fish define make_movie_case2
+  local keys = map.keys(track_map)
+  local count = 1
+  command
+    program echo off
+  endcommand
+  loop foreach value keys
+    local fname = string.build('fragments_case2_%1.png',count)
+    command
+      model domain extent -10 10
+      model result import [string.build('frag%1.p3result',count)] skip-fish
+      plot 'system' export bitmap filename @fname 
+    endcommand
+    count += 1
+  endloop
+  command
+    program echo on
+  endcommand
+end

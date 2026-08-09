@@ -1,0 +1,62 @@
+; fname: ClusterSizeDistribution.p3dat
+
+fish def clumpvolumes
+  global volumes = array.create(idc)
+  loop local i (1,array.size(volumes,1))
+    volumes(i)=0.0
+  endloop
+  loop foreach bp ball.list
+    volumes(ball.extra(bp,1)) = volumes(ball.extra(bp,1)) ...
+                                + 1.3333*math.pi*ball.radius(bp)^3
+  endloop
+end
+
+fish def sizedistribution(intervals)
+  command
+    @clumpvolumes
+  endcommand
+  io.out(string.build("size volumes = %1", array.size(volumes,1)))
+  nentries = array.size(volumes,1)
+  radius = array.create(nentries)
+  minD = 1000
+  maxD = -1
+  local nonzeroentries = 0
+  loop local i (1,array.size(volumes,1))
+    radius(i) = ((3*volumes(i))/(4*math.pi))^(0.33333)
+    if radius(i)#0
+      nonzeroentries = nonzeroentries + 1
+      minD = math.min(radius(i)*2,minD)
+      maxD = math.max(radius(i)*2,maxD)
+    endif
+  endloop
+  io.out(string.build("minD = %1 , maxD = %2", minD, maxD))
+  increment = (maxD-minD)/intervals
+  passing = array.create(intervals+1)
+  aveD = array.create(intervals+1)
+  t = string.build("sizedist%1",nentries)
+  dist = table.get(t)
+  loop local j (1,array.size(aveD,1))
+    aveD(j) = minD + increment*(j-1)
+    passing(j) = 0.0
+  endloop
+  table(t,aveD(1))=passing(1)
+  loop local p (2,array.size(passing,1))
+    pass = 0
+    loop local r (1,array.size(radius,1))
+      d = radius(r)*2
+      if d#0
+        if d<=aveD(p)
+          pass = pass+1
+        endif
+      endif
+    endloop
+    passing(p) = 100*(float(pass)/nonzeroentries)
+    table(t,aveD(p))=passing(p)
+  endloop
+  loop local tt (1,array.size(aveD,1))   
+    io.out(string.build("passing[%1] = %2", tt, passing(tt)))
+  endloop
+end
+
+;=============================================================================
+; eof: SizeDistribution.p3dat

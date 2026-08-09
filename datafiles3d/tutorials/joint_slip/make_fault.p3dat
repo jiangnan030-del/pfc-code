@@ -1,0 +1,27 @@
+; fname: make_fault.p3dat
+;
+; Restore an intact BPM
+; Generate a single fracture and install the smoothjoint contact model
+; at contacts intercepted by the fracture
+;==============================================================================
+model restore 'intact'
+
+; Add single joint with dip of 30 degrees
+; The default center location is 0,0
+fracture create dip 30 dip-direction 90 size 20.0
+
+; Set dfn properties to be assigned to intersecting contacts
+; Friction angle is 35 degrees
+fracture property ...
+         'sj_kn' 2e9 'sj_ks' 2e9 'sj_fric' 0.70 ...
+         'sj_coh' 0.0 'sj_ten' 0.0 'sj_large' 1
+
+; Apply smoothjoint contact model to contacts intercepted by fracture
+fracture contact-model model 'smoothjoint' install dist 0.1
+
+; Ensure new contacts intersecting the fracture are set to the sj contact model
+fracture contact-model model 'smoothjoint' activate 
+
+model save 'fault'
+;==============================================================================
+; eof: make_fault.p3dat

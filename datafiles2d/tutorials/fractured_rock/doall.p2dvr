@@ -1,0 +1,10 @@
+; fname: doall.p2dvr
+;
+; sequentially call the datafiles used to create a fractured rock mass model  
+;===========================================================================
+program call 'make_brick'
+program call 'make_intact'
+program call 'make_fractured'
+return
+;===========================================================================
+; eof: doall.p2dvr

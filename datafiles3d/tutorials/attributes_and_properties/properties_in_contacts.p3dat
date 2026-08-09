@@ -1,0 +1,39 @@
+; fname: properties_in_contacts.p3dat
+;
+;  Demonstrate ball properties being used to set contact model properties
+;==============================================================================
+model new
+model title 'Properties in Contacts'
+
+; create the domain
+model domain extent -10.0 10.0 -5.0 5.0 -10.0 10.0 condition reflect
+
+; use the linear contact model 
+contact cmat default model linear
+
+; generate an assembly
+model random 10001
+ball generate number 140 radius 1.0 box -10 0 -5 5 -10 10 tries 300000
+ball generate number 140 radius 1.0 box 0 10 -5 5 -10 10 tries 300000
+
+; assign the density and local damping
+ball attribute density 1000 damp 0.7
+
+;set gravity
+model gravity 10
+
+; assign properties balls for the linear contact model to use
+ball property 'kn' 1e8 range position-x -10 0
+ball property 'kn' 5e5 range position-x 0 10
+ball property 'fric' 0.7
+
+; put a partition between the two sides
+wall generate plane dip 90 dip-direction 90
+wall property 'kn' 1e7
+
+; let them drop
+model solve time 10
+
+return
+;==============================================================================
+; eof: properties_in_contacts.p3dat

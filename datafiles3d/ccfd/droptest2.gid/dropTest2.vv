@@ -1,0 +1,19 @@
+BeginZE C:\src\a_pfc_git\ccfd\test3d\new_coupled_examples\dropTest2.gid\dropTest2.vv
+   x -1.57244 1.57244
+   y 0.866025 -0.866025
+   z -3.09808 2.09808
+   e 0.866025
+   v 0.649711 -0.00181265 -0.0830641
+   r 0.755628
+   m 0.986194 0.123176 -0.110675 0 -0.127887 0.141953 -0.981579 0 -0.105196 0.982181 0.155745 0 0 0 0 1
+   c 0 0 0.5
+   pd 0
+   pno 0
+   pfo 0
+   pf 4
+   pv 0
+   NowUse 1
+   DrawingType 0
+   LightVector 90 90 150 0
+EndZE C:\src\a_pfc_git\ccfd\test3d\new_coupled_examples\dropTest2.gid\dropTest2.vv
+

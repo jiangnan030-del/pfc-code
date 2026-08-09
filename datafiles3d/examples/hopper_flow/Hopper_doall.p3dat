@@ -1,0 +1,33 @@
+; fname: Hopper_doall.p3dat
+;
+; Granular flow from a rectangular hopper. 
+; The effects of hopper friction and particle friction are investigated, 
+; and shown to have a significant influence on the hopper discharge behavior
+;============================================================================
+
+model new
+echo off
+call 'Hopper_utilities.p3dat'
+echo on
+
+;------------ LOW FRICTION CASE
+@build_hopper(0.05,0.01,30.0)
+model save 'hopper_ini'
+@Action(50,'LowFriction1')
+model restore 'hopper_ini'
+@Action(100,'LowFriction2')
+model save 'LowFrictionHopper'
+
+;------------HIGH FRICTION
+model restore 'hopper_ini'
+ball property 'fric' 0.8
+wall property 'fric' 0.8
+@Action(50,'HighFriction1')
+model restore 'hopper_ini'
+ball property 'fric' 0.8
+wall property 'fric' 0.8
+@Action(100,'HighFriction2')
+model save 'HighFrictionHopper'
+
+;=============================================================================
+; eof: Hopper_doall.p3dat

@@ -1,0 +1,4 @@
+program call "make_system.dat"     suppress  
+program call "analytical_fric.py"  suppress
+program call "pfc_fric.py"         suppress
+program return

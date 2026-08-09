@@ -1,0 +1,27 @@
+; fname: doall_fj.p2dat
+;
+;  Create and test flat joint material
+;==============================================================================
+
+; make the unbonded sample
+program call 'make_sample' suppress
+
+; bond it
+program call 'flat_joint' suppress
+
+program log-file 'fj.log'
+program log on
+
+; run ucs test
+program call 'ucs'
+model save 'fj_ucs'
+
+; run tension test
+model restore 'flatjoint'
+program call 'tension' suppress
+model save 'fj_tension'
+
+program log off
+
+;==============================================================================
+; eof: doall_fj.p2dat

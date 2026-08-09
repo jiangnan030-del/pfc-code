@@ -1,0 +1,88 @@
+NUMBER: 1 MATERIAL: WATER
+QUESTION: DENSITY
+VALUE: 998.23
+HELP: Input then density of water.
+QUESTION: VISCOSITY
+VALUE: 1.004E-3
+HELP: Input the viscosity of water.
+QUESTION: TERMAL_CONDUCTIVITY
+VALUE: 0.61040
+HELP: Input the thermal conductivity of water.
+QUESTION: SPECIFIC_HEAT
+VALUE: 4179.0
+HELP: Input the specific heat at constant pressure of water.
+QUESTION: EXCO
+VALUE: 1.18E-4
+HELP: Input the thermal expansion coefficient of water.
+QUESTION: MOL_WEIGHT
+VALUE: 18.015
+HELP: Input the molecular weight of water.
+QUESTION: Absorption_Coefficient
+VALUE: 0.0
+END MATERIAL
+NUMBER: 2 MATERIAL: AIR
+QUESTION: DENSITY
+VALUE: 1.189
+HELP: Input then density of air.
+QUESTION: VISCOSITY
+VALUE: 1.836E-5
+HELP: Input the viscosity of air.
+QUESTION: TERMAL_CONDUCTIVITY
+VALUE: 0.02614
+HELP: Input the thermal conductivity of air.
+QUESTION: SPECIFIC_HEAT
+VALUE: 1007.0
+HELP: Input the specific heat at constant pressure of air.
+QUESTION: EXCO
+VALUE: 3.41E-3
+HELP: Input the thermal expansion coefficient of air.
+QUESTION: MOL_WEIGHT
+VALUE: 28.97
+HELP: Input the molecular weight of air.
+QUESTION: Absorption_Coefficient
+VALUE: 0.0
+END MATERIAL
+NUMBER: 3 MATERIAL: STEEL
+QUESTION: DENSITY
+VALUE: 7.80E3
+HELP: Input then density of steel.
+QUESTION: VISCOSITY
+VALUE: 7.80E05
+HELP: Input the viscosity of steel.
+QUESTION: TERMAL_CONDUCTIVITY
+VALUE: 16.0
+HELP: Input the thermal conductivity of steel.
+QUESTION: SPECIFIC_HEAT
+VALUE: 499.0
+HELP: Input the specific heat at constant pressure of steel.
+QUESTION: EXCO
+VALUE: 0.0
+HELP: Input the thermal expansion coefficient of steel.
+QUESTION: MOL_WEIGHT
+VALUE: 55.847
+HELP: Input the molecular weight of steel.
+QUESTION: Absorption_Coefficient
+VALUE: 0.0
+END MATERIAL
+NUMBER: 4 MATERIAL: Glycerol
+QUESTION: DENSITY
+VALUE: 1260
+HELP: Input then density of water.
+QUESTION: VISCOSITY
+VALUE: 1.5
+HELP: Input the viscosity of water.
+QUESTION: TERMAL_CONDUCTIVITY
+VALUE: 0.61040
+HELP: Input the thermal conductivity of water.
+QUESTION: SPECIFIC_HEAT
+VALUE: 4179.0
+HELP: Input the specific heat at constant pressure of water.
+QUESTION: EXCO
+VALUE: 1.18E-4
+HELP: Input the thermal expansion coefficient of water.
+QUESTION: MOL_WEIGHT
+VALUE: 18.015
+HELP: Input the molecular weight of water.
+QUESTION: Absorption_Coefficient
+VALUE: 0.0
+END MATERIAL

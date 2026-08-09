@@ -1,0 +1,119 @@
+;-------------------------------------------------------------------
+;                Punch Indentation of a Bonded 
+;                Material
+;-------------------------------------------------------------------
+model new
+model title 'Punch Indentation of a Bonded Material'
+;make repeatable by setting the random number seed 
+model random 10001
+;set the model domain for PFC balls and walls
+model domain extent -2 2 -2 2 -2.5 0 condition destroy
+;largestrain mode must always be on for coupled simulations
+model largestrain on
+;apply timestep scaling so the PFC timestep will be 1
+model mechanical timestep scale
+
+;define the effective modulus of the DEM material - 
+; use this as the Young's modulus of the bed of zones as well
+[materialMod = 1.0e6]
+;define the Young's modulus of the zones comprising the punch
+[punchYoung = 1.0e7]
+
+;create a bed of zones for the balls to sit inside
+zone create brick size 35 35 35 point 0 -4 -4 -4.5 point 1 4 -4 -4.5 ...
+                                point 2 -4 4 -4.5 point 3 -4 -4 -1 group 'bed'
+zone cmodel assign elastic
+zone property young [materialMod] poisson 0.25
+zone cmodel null ...
+            range position-x -1.5 1.5 position-y -1.5 1.5 position-z -2 -1
+;as the balls are packing into this region - 
+;fix the gridpoint motions as the balls are settling
+zone gridpoint fix velocity
+
+;wrap the bed with walls
+wall-zone create name 'bed' starting-zone 30013
+;create a wall over the top 
+wall generate name 'top' plane position 0 0 -1 
+
+;create a cloud of balls that are arbitrarily overlapping  
+ball distribute porosity 0.4 box -1.5 1.5 -1.5 1.5 -2 -1 radius 0.04 0.06
+
+;set the ball density and local damping coefficient
+ball attribute density 2600 damp 0.7
+;set the default contact behavior - 
+;the deformability method sets properties of the linear portion 
+;of the contact model
+contact cmat default model linearpbond method deformability ...
+                   emod [materialMod] kratio 1.0 
+;allow the balls to rearrange, nulling the linear 
+;and angular velocities every 100 cycles
+model cycle 1000 calm 100
+;delete any balls that flew out of the bed
+ball delete range position -1.5 -1.5 -2  1.5 1.5 -1 not
+
+;bond the balls together with the specified gap
+contact method bond gap 2.0e-3
+;set the parallel bond properties from the pb_deform method
+contact method pb_deform emod [materialMod] kratio 1.0
+;remove the linear portion of the contact properties
+;and set the contact strength
+;this will be a relatively weak material
+contact property lin_mode 1 pb_ten 2e4 pb_coh 2e5 ...
+        range contact type 'ball-ball'
+;set the ball-facet contact strength to be very high
+contact property lin_mode 1 pb_ten 1e100 pb_coh 1e100 ...
+        range contact type 'ball-facet'
+;remove the box
+wall delete wall range name 'top'
+;set the default behavior for new ball-ball and ball-facet contacts
+contact cmat default model linear type ball-ball method deformability ...
+                   emod [materialMod] kratio 1.0 property fric 0.3
+contact cmat default model linear type ball-facet method deformability ...
+                   emod [materialMod] kratio 1.0 property fric 0.3
+;remove all velocities, fix the balls, 
+;cycle 2 to remove any contact forces that previously existed from 
+;the simple packing procedure
+model calm
+ball fix velocity spin
+ball attribute force-contact multiply 0.0
+contact property lin_force 0 0 0
+model cycle 2
+ball free velocity spin
+;fix the z- velocity of zones at the bottom of the model
+zone gridpoint free velocity
+zone gridpoint fix velocity-z range position-z -5 -4.4
+;reset the ball displacement
+ball attribute displacement multiply 0.0
+model save 'withoutPunch'
+
+;create the rounded punch and assign properties to it
+zone create cylinder point 0 0 -0.5 0 ...
+                  point 1 [-math.sqrt(2.0)/2.0] -0.5 [-math.sqrt(2.0)/2.0] ...
+                  point 2 0 0.5 0 ...
+                  point 3 [math.sqrt(2.0)/2.0] -0.5 [-math.sqrt(2.0)/2.0] ...
+                  size 5 5 5 group 'punch'
+zone cmodel assign elastic range group 'punch'
+zone property young [punchYoung] poisson 0.25 range group 'punch'
+;wrap the punch with walls
+wall-zone create range group 'punch'
+;assign a group the gridpoints on the top of the punch and fix the z- velocity
+zone gridpoint group "fixed" range position-z -0.4 1
+zone gridpoint fix velocity-z -.0001 range group "fixed"
+model save 'withPunch'
+
+;push the punch into the balls with just minimal failure of the material
+model cycle 1000
+zone gridpoint fix velocity-z 0.0 range group "fixed"
+;solve to an equilibrium state to show the current displacements
+model solve ratio-average 1.0e-4 
+model save 'beforeFailure'
+
+;push the punch in and watch the zone displacement
+;diminish after the onset of failure
+zone gridpoint fix velocity-z -.0001 range group "fixed"
+model cycle 1000
+zone gridpoint fix velocity-z 0.0 range group "fixed"
+;failure will continue and the granular specimen will rearrange,
+;reducing the displacements
+model solve ratio-average 1.0e-3 
+model save 'afterFailure'

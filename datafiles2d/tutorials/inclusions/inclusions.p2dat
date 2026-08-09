@@ -1,0 +1,104 @@
+; filename: inclusions.p2dat
+;
+;  PFC2D tutorial - Demonstrate usage of the CMAT to build complex material
+;  with spatial distributions of mechanical properties
+;
+;==============================================================================
+model new
+model title 'Soft and Stiff Inclusions in a Matrix'
+
+; build initial BPM
+model domain extent -5 5  
+contact cmat default model linear property kn 1e5
+
+wall generate box -2 2 -4 4
+model random 10001
+ball distribute porosity 0.08 radius 0.05 0.07 box -2 2 -4 4 group 'matrix'
+ball attribute position mult 0.9
+ball attribute density 1000.0 damp 0.7
+model cycle 1000 calm 10
+model mechanical timestep scale
+model solve ratio-average 1e-5
+model mechanical timestep auto
+model solve ratio-average 1e-5
+
+contact cmat default model linearpbond ...
+                   property kn 1e8 ks 5e7 fric 0.25 lin_mode 1 ...
+                   pb_kn 1e8 pb_ks 5e7 pb_ten 2e5 pb_coh 5e4 pb_fa 20
+
+contact cmat apply
+contact method bond gap 0.0
+wall delete
+model solve elastic ratio-average 1e-5
+
+; prepare for upcoming tests : add top and bottom platens and set up monitoring
+contact cmat default type 'ball-facet' model linear ...
+                                       property kn 1e8 ks 5e7 fric 0.25
+wall generate id 1 plane position 0.0  4.015
+wall generate id 2 plane position 0.0 -4.015
+wall attribute velocity-y -0.005 range id 1
+wall attribute velocity-y  0.005 range id 2
+wall history force-contact-y id 1
+wall history force-contact-y id 2
+wall history displacement-y id 2
+ball attribute displacement 0.0
+model save 'initial1'
+
+; perform UCS test (activate fragment tracking)
+fragment register ball-ball
+fragment activate time 0.1
+model solve time 5.0 
+model save 'final1'
+
+; use groups to identify inclusions 
+model restore 'initial1'
+ball group 'inclusions' range circle center 1.0 3.0 rad 0.5
+ball group 'inclusions' range circle center -0.5 1.0 rad 0.5
+ball group 'inclusions' range circle center 0.5 -1.5 rad 0.5
+ball group 'inclusions' range circle center -1.0 -3.0 rad 0.5
+model save 'initial-groups'
+
+; change contact model properties - softer inclusions
+contact cmat default type ball-ball model linear ...
+                                    property kn 1e7 ks 5e6 fric 0.25 lin_mode 1
+contact cmat add 1 model linearpbond ...
+                   property kn 1e8 ks 5e7 fric 0.25 lin_mode 1 ...
+                   pb_kn 1e8 pb_ks 5e7 pb_ten 2e5 pb_coh 5e4 pb_fa 20 ...
+                   range group 'matrix' matches 2
+contact cmat add 2 model linearpbond ...
+                   property kn 1e7 ks 5e6 fric 0.25 lin_mode 1 ...
+                   pb_kn 1e7 pb_ks 5e6 pb_ten 2e4 pb_coh 5e3 pb_fa 20 ...
+                   range group 'inclusions' matches 2
+contact cmat apply
+contact method bond gap 0.0
+
+; repeat UCS test
+fragment register ball-ball
+fragment activate time 0.1
+model solve time 5.0 
+model save 'final2'
+
+; change contact model properties - stiffer inclusions
+model restore 'initial-groups'
+contact cmat default type ball-ball model linear ...
+                                    property kn 1e8 ks 5e7 fric 0.25 lin_mode 1
+contact cmat add 1 model linearpbond ...
+                   property kn 1e8 ks 5e7 fric 0.25 lin_mode 1 ...
+                   pb_kn 1e8 pb_ks 5e7 pb_ten 2e5 pb_coh 5e4 pb_fa 20 ...
+             range group 'matrix' matches 2
+contact cmat add 2 model linearpbond ...
+                   property kn 1e9 ks 5e8 fric 0.25 lin_mode 1 ...
+                   pb_kn 1e9 pb_ks 5e8 pb_ten 2e6 pb_coh 5e5 pb_fa 20 ...
+             range group 'inclusions' matches 2
+contact cmat apply
+contact method bond gap 0.0
+
+; repeat UCS test
+fragment register ball-ball
+fragment activate time 0.1
+model solve time 5.0 
+model save 'final3'
+
+return
+;==============================================================================
+; eof: inclusions.p2dat

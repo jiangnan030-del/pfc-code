@@ -1,0 +1,36 @@
+; fname: cmhertzbw.p3dat
+;     Exercise the Hertz contact model under multiple loading paths
+; =============================================================================
+model new
+model title 'Excercising the Hertz contact model (ball-wall interaction)'
+
+call 'cmhertz-setup.p3dat' suppress
+
+wall generate id=1 disk radius=0.5 position 0.0 0.5 0.0 dip 90 resolution 0.1
+ball create id=1 position-x=0.0 position-y=1.0 radius=0.5
+
+ball attribute density 2500.0
+ball fix velocity-x velocity-y velocity-z spin-x spin-y spin-z
+model clean
+model save 'hzbw3d_ini'
+
+; load 1 : 
+@loading_path('hzbw',1)
+
+; load 2 :  hz_mode = 1
+model restore 'hzbw3d_ini'
+contact property hz_mode 1
+@loading_path('hzbw',2)
+
+; load 3 :  hz_mode = 1 - normal and shear viscous damping
+model restore 'hzbw3d_ini'
+contact property hz_mode 1     ...
+                 dp_nratio 0.5 ...
+                 dp_sratio 0.5 ...
+                 dp_mode  3
+
+@loading_path('hzbw',3)
+
+return
+; =============================================================================
+;eof: cmhertzbw.p3dat

@@ -1,0 +1,51 @@
+model new
+
+model restore 'withoutPunch'
+plot 'ModelGeometry' export bitmap filename 'punch-initial-geom-no-punch.png'
+plot 'CrossSection' export bitmap filename 'punch-initial-geom-no-punch-xc.png'
+
+model restore 'withPunch'
+plot 'ModelGeometry' export bitmap filename 'punch-initial-geom-with-punch.png'
+plot 'Walls' export bitmap filename 'punch-initial-walls.png'
+
+model restore 'beforeFailure'
+fish def checkBroken
+    local ret
+    loop foreach local cp contact.list()
+        if contact.model(cp) == 'linearpbond'
+            local bs = contact.prop(cp,'pb_state')
+            if bs == 1 
+                ret = ret + 1
+            else if bs == 2
+                ret = ret + 1
+            endif
+        endif
+    endloop
+    checkBroken = ret
+end
+-test check int @checkBroken 125
+plot 'PunchStress' export bitmap filename 'punch-before-failure-stress.png'
+plot 'PunchSurfaceDisp' export bitmap filename 'punch-before-failure-surf.png'
+plot 'CrossSection' export bitmap filename 'punch-before-failure-xc.png'
+plot 'BrokenBonds' export bitmap filename 'punch-before-failure-broken-bonds.png'
+
+model restore 'afterFailure'
+fish def checkBroken
+    local ret
+    loop foreach local cp contact.list()
+        if contact.model(cp) == 'linearpbond'
+            local bs = contact.prop(cp,'pb_state')
+            if bs == 1 
+                ret = ret + 1
+            else if bs == 2
+                ret = ret + 1
+            endif
+        endif
+    endloop
+    checkBroken = ret
+end
+-test check int @checkBroken 939
+plot 'PunchStress' export bitmap filename 'punch-after-failure-stress.png'
+plot 'PunchSurfaceDisp' export bitmap filename 'punch-after-failure-surf.png'
+plot 'CrossSection' export bitmap filename 'punch-after-failure-xc.png'
+plot 'BrokenBonds' export bitmap filename 'punch-after-failure-broken-bonds.png'

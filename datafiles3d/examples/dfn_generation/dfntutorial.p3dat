@@ -1,0 +1,216 @@
+;-----------
+;  CODE 1
+;-----------
+
+model new
+
+; define the domain
+model domain extent -50 50 -50 50 -50 50
+
+; fix the random seed
+model random 101
+
+;-----------
+;  CODE 2
+;----------- 
+
+; borehole creations 
+geom set 'vertical_borehole'
+geom edge create by-position (0,0,-45) (0,0,40)
+
+geom set '45_degree_borehole'
+fish def make_45_borehole
+   local x1 = -50
+   local x2 = 50
+   ; rotation of 45 degree
+   local x1rot = x1*math.cos(math.pi/4)
+   local z1rot = x1*math.sin(math.pi/4)
+   local x2rot = x2*math.cos(math.pi/4)
+   local z2rot = x2*math.sin(math.pi/4)
+   command 
+       geom edge create by-position (@x1rot,0,@z1rot) (@x2rot,0,@z2rot)
+   endcommand
+end
+@make_45_borehole
+
+; outcrop creation 
+geom set 'horizontal_outcrop'
+geom polygon create by-position ...
+                    (-40,-40,40) (-40,40,40) (40,40,40) (40,-40,40)
+
+geom set 'vertical_outcrop'
+geom polygon create by-position ...
+                    (-41,-41,50) (-41,41,50) (-41,41,40) (-41,-41,40)
+
+model save 'geometries'
+
+
+;------------
+;  CODE 3
+;------------
+
+; define the template of set 1: vertical fractures
+fracture template create 'sub_vertical' ...
+         orientation fisher 90,120,200 size power-law 4 size-limit 10 500
+fracture generate dfn 'sub_vertical'               ...
+         generation-box -100 100 -100 100 -100 100 ...
+         template 'sub_vertical' mass-density 0.33
+
+;-----------
+;  CODE 4
+;-----------
+
+; define the template of set 2: horizontal fractures
+fracture template create 'sub_horizontal' ...
+         orientation fisher 20 30 500 size power-law 4 size-limit 10 500
+
+fish define variables
+  global nb_hori = 0
+  global nb_hori_aimed = 39
+end
+@variables
+
+fish define hori_study(frac)
+  local outc = geom.set.find('vertical_outcrop')
+  local is_inter = fracture.gintersect(frac,outc)
+  if is_inter>0
+    nb_hori = nb_hori+1
+  endif
+end
+
+fish define hori_stop
+    hori_stop = 0
+    if nb_hori >= nb_hori_aimed
+        hori_stop=1
+    endif
+end
+
+fracture generate dfn 'sub_horizontal'             ...
+         generation-box -100 100 -100 100 -100 100 ...
+         template 'sub_horizontal' modify @hori_study fish-stop @hori_stop
+
+;-----------
+;  CODE 5
+;-----------
+
+; define the template of set 3: background jointing
+fracture template create 'background' orientation    ...
+         bootstrapped 'orientation_distribution.inp' ...
+         size power-law 3.2 size-limit 2 10
+fracture generate dfn 'background'                   ...
+         generation-box -55 55 -55 55 -55 55         ...
+         template 'background' p10 0.5 geometry 'vertical_borehole'
+
+
+model save 'dfngeneration'
+
+;-----------
+;  CODE 6
+;-----------
+
+; print densities
+
+fracture compute mass-density
+fracture compute p10 begin (-50,0,0) end (50,0,0)
+fish define geometry_density
+    local poutcrop = geom.set.find('vertical_outcrop')
+    local pborehole = geom.set.find('vertical_borehole')
+    local oo = io.out('p21 vertical = '+string(fracture.geomp21(poutcrop)))
+    oo = io.out('p10 vertical = '+string(fracture.geomp10(pborehole)))
+end
+@geometry_density
+
+;-----------
+;  CODE 7
+;-----------
+
+; traces and intercepts
+fracture intersection compute with-geometry 'horizontal_outcrop' ...
+         intersection-set 'inter_hori_out' group-slot 1
+fracture intersection compute with-geometry 'vertical_outcrop'   ...
+         intersection-set 'inter_vert_out' group-slot 2
+fracture intersection compute with-geometry 'vertical_borehole'  ...
+         intersection-set 'inter_vert_bore' group-slot 3
+
+fish define assign_extras
+    local set1 = fracture.inter.set.find(1)
+    local intlist = fracture.inter.set.interlist(set1)
+    loop foreach e1 intlist
+        local f1 = fracture.inter.end1(e1)
+        if type.pointer.id(f1) = fracture.typeid then
+            fracture.extra(f1,1) = 1
+        endif
+    endloop    
+    local set2 = fracture.inter.set.find(2)
+    intlist = fracture.inter.set.interlist(set2)
+    loop foreach e1 intlist
+        f1 = fracture.inter.end1(e1)
+        if type.pointer.id(f1) = fracture.typeid then
+            fracture.extra(f1,2) = 2
+        endif
+    endloop
+    local set3 = fracture.inter.set.find(3)
+    intlist = fracture.inter.set.interlist(set3)
+    loop foreach e1 intlist
+        f1 = fracture.inter.end1(e1)
+        if type.pointer.id(f1) = fracture.typeid then
+            fracture.extra(f1,3) = 3
+        endif
+    endloop
+end 
+
+@assign_extras
+
+model save 'traces'
+
+;-----------
+;  CODE 8
+;-----------
+
+; connectivity
+
+fracture intersection compute intersection-set 'all'
+fracture cluster group-slot 1 intersection-set 'all'
+
+model save 'connectivity'
+
+;-----------
+;  CODE 9
+;-----------
+
+; keep only infinite cluster
+fracture intersection delete
+fracture delete range group "all1" not
+fracture intersection compute intersection-set 'all'
+
+;-----------
+;  CODE 10
+;-----------
+
+; filter by connected distance
+
+geom set 'injection_section'
+geom poly create by-position (-1,-1,-1) (-1,1,-1) (1,1,-1) (1,-1,-1)
+geom poly create by-position (-1,-1,-1) (-1,1,-1) (-1,1,1) (-1,-1,1)
+geom poly create by-position (-1,-1,1) (-1,1,1) (1,1,1) (1,-1,1)
+geom poly create by-position (1,1,1) (1,-1,1) (1,-1,-1) (1,1,-1)
+geom poly create by-position (1,1,1) (1,1,-1) (-1,1,-1) (-1,1,1)
+geom poly create by-position (1,-1,1) (1,-1,-1) (-1,-1,-1) (-1,-1,1) 
+fracture connectivity distance extra-index 6 ...
+         starting-geometry 'injection_section' intersection-set 5
+fracture intersection delete
+fracture delete range extra 6 0 50 not
+
+model save 'simplification1'
+
+;-----------
+;  CODE 10
+;-----------
+
+; fracture combination
+
+fracture combine distance 1 angle 20 merge range extra 6 10 20 
+fracture combine distance 5 angle 45 merge range extra 6 20 30 
+fracture combine distance 10 angle 80 merge range extra 6 30 50 
+
+model save 'simplification2'

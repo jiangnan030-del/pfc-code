@@ -1,0 +1,76 @@
+; fname: cmhertz-setup.p3dat
+;     Setup shared parameters, loading path and history monitoring 
+; =============================================================================
+
+model domain extent -2 2 -2 2 condition periodic
+contact cmat default model hertz property hz_shear 1e9 hz_poiss 0.3 fric 0.5
+model mechanical timestep fix 1e-3
+
+fish define monitor
+  modeltime = mech.time.total
+  cnforce = 0
+  cnvforce = 0
+  csforce = 0
+  csvforce = 0
+  loop foreach local cp contact.list
+    hz_f_loc = contact.prop(cp,'hz_force')  
+    cnforce  = comp.x(hz_f_loc)
+    hz_fs_loc = hz_f_loc
+    comp.x(hz_fs_loc) = 0.0
+    csforce  = math.mag(hz_fs_loc)
+    hz_fs_glob = contact.to.global(cp,hz_fs_loc)
+    cxsforce  = comp.x(hz_fs_glob)
+    cysforce  = comp.y(hz_fs_glob)
+    czsforce  = comp.z(hz_fs_glob)    
+    cnvforce = comp.x(contact.prop(cp,'dp_force'))
+    csvforce = comp.y(contact.prop(cp,'dp_force'))
+  endloop
+end
+
+fish callback add @monitor 50.0
+
+history interval 1
+model history name 1 mechanical time-total
+model history name 2 timestep
+fish history name 100 @cnforce
+fish history name 101 @cnvforce
+fish history name 102 @cxsforce
+fish history name 103 @cysforce
+fish history name 104 @czsforce
+
+fish history name 105 @csforce
+fish history name 106 @csvforce
+
+model energy mechanical on
+model history name 1000 mechanical energy energy-strain
+model history name 1001 mechanical energy energy-slip
+model history name 1002 mechanical energy energy-dashpot
+
+fish define loading_path(root,n)
+  local fnamea = string.build('%1%2d_load%3a',root,global.dim,n)
+  local fnameb = string.build('%1%2d_load%3b',root,global.dim,n)
+  local fnamec = string.build('%1%2d_load%3c',root,global.dim,n)
+  local fnamed = string.build('%1%2d_load%3d',root,global.dim,n)
+  local fnamee = string.build('%1%2d_load%3e',root,global.dim,n)
+  command
+    ball attribute velocity-y -0.01 range id 1
+    model solve time 1e-1
+    model save @fnamea
+    ball attribute velocity-y 0 spin-z 0.00628 range id 1
+    model solve time 5e-2
+    model save @fnameb
+    ball attribute spin multiply 0.0 spin-x 0.00628 range id 1
+    model solve time 5e-2
+    model save @fnamec
+    ball attribute spin multiply 0.0 spin-y 6.28 range id 1
+    model solve time 5e-2
+    model save @fnamed
+    ball attribute spin multiply 0.0 velocity-y 0.01 range id 1
+    model solve time 1e-1
+    model save @fnamee
+  endcommand
+end
+
+return
+; =============================================================================
+; eof: cmhertz-setup.p3dat

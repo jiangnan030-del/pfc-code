@@ -1,0 +1,36 @@
+; fname: Tunnel.p3dat
+;
+;  Excavation of an unsupported tunnel
+;==============================================================================
+
+; The state prior to the footing load is restored
+model restore 'Assembly'
+
+; A cylinder-shaped tunnel is excavated through the 'delete' 
+; and the 'range group' commands
+ball group 'Tunnel' range cylinder end-1 (16.0,-6.0,6.0) ...
+     end-2 (16.0,6.0,6.0) radius 3.0
+ball delete range group 'Tunnel'
+
+; A number of cycles are done in order to verify that the model is stable 
+; after excavation of the tunnel. The model is saved at this stage.
+model cycle 1
+model solve ratio-average 1e-5
+
+model save 'StableTunnel'
+
+;The assembly is finally loaded by the footing. What happens to the tunnel?
+wall attribute velocity-z -0.25 range group 'footing'
+
+model mechanical timestep auto
+model solve time 10.0
+
+; Solve to an equilibrium state again
+wall attribute velocity-z 0.0
+model solve ratio-average 1e-5
+
+
+model save 'UnlinedTunnel'
+
+;==============================================================================
+; eof: Tunnel.p3dat

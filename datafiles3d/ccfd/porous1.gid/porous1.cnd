@@ -1,0 +1,249 @@
+BOOK:Boundary
+NUMBER: 1 CONDITION: FIXED-VELOCITY
+CONDTYPE: over surfaces
+CONDMESHTYPE: over face elements
+CANREPEAT: yes
+QUESTION: X-Value
+VALUE: 0.0
+HELP: Input velocity in X-direction on the boundary.
+QUESTION: Y-Value
+VALUE: 0.0
+HELP: Input velocity in Y-direction on the boundary.
+QUESTION: Z-Value
+VALUE: 0.0
+HELP: Input velocity in Z-direction on the boundary.
+END CONDITION
+NUMBER: 2 CONDITION: FIXED-PRESSURE
+CONDTYPE: over surfaces
+CONDMESHTYPE: over face elements
+CANREPEAT: yes
+QUESTION: PRESSURE
+VALUE: 0.0
+HELP: Input pressure on the boundary.
+END CONDITION
+NUMBER: 3 CONDITION: FIXED-TEMPERATURE
+CONDTYPE: over surfaces
+CONDMESHTYPE: over face elements
+CANREPEAT: yes
+QUESTION: TEMPERATURE
+VALUE: 0.0
+HELP: Input temperature on the boundary.
+END CONDITION
+NUMBER: 4 CONDITION: HEAT-FLUX
+CONDTYPE: over surfaces
+CONDMESHTYPE: over face elements
+CANREPEAT: yes
+QUESTION: HEAT-FLUX[ex.W/m/m]
+VALUE: 0.0
+HELP: Input heat flux through the boundary.
+END CONDITION
+NUMBER: 5 CONDITION: HEAT-TRANSFER
+CONDTYPE: over surfaces
+CONDMESHTYPE: over face elements
+CANREPEAT: yes
+QUESTION: COEFFICIENT
+VALUE: 0.0
+HELP: Input film coefficient.
+QUESTION: TEMPERATURE
+VALUE: 0.0
+HELP: Input temperature of atmosphere.
+END CONDITION
+NUMBER: 6 CONDITION: FIXED-SCALAR2
+CONDTYPE: over surfaces
+CONDMESHTYPE: over face elements
+CANREPEAT: yes
+QUESTION: FIXED-SCALAR2
+VALUE: 0.0
+HELP: Input the fixed value for scalar data2 boundary.
+END CONDITION
+NUMBER: 7 CONDITION: SC2-FLUX
+CONDTYPE: over surfaces
+CONDMESHTYPE: over face elements
+CANREPEAT: yes
+QUESTION: SC2-FLUX
+VALUE: 0.0
+HELP: Input the flux for scalar data2.
+END CONDITION
+NUMBER: 8 CONDITION: SC2-TRANSFER
+CONDTYPE: over surfaces
+CONDMESHTYPE: over face elements
+CANREPEAT: yes
+QUESTION: COEFFICIENT
+VALUE: 0.0
+HELP: Input the film coefficient for scalar data2.
+QUESTION: SC2-TRANSFER
+VALUE: 0.0
+HELP: Input the value for scalar data2 transfer.
+END CONDITION
+NUMBER: 9 CONDITION: FIXED-SCALAR3
+CONDTYPE: over surfaces
+CONDMESHTYPE: over face elements
+CANREPEAT: yes
+QUESTION: FIXED-SCALAR3
+VALUE: 0.0
+HELP: Input the fixed value for scalar data3 boundary.
+END CONDITION
+NUMBER: 10 CONDITION: SC3-FLUX
+CONDTYPE: over surfaces
+CONDMESHTYPE: over face elements
+CANREPEAT: yes
+QUESTION: SC3-FLUX
+VALUE: 0.0
+HELP: Input the flux for scalar data3.
+END CONDITION
+NUMBER: 11 CONDITION: SC3-TRANSFER
+CONDTYPE: over surfaces
+CONDMESHTYPE: over face elements
+CANREPEAT: yes
+QUESTION: COEFFICIENT
+VALUE: 0.0
+HELP: Input the film coefficient for scalar data3.
+QUESTION: SC3-TRANSFER
+VALUE: 0.0
+HELP: Input the value for scalar data3 transfer.
+END CONDITION
+NUMBER: 12 CONDITION: FIXED-SCALAR4
+CONDTYPE: over surfaces
+CONDMESHTYPE: over face elements
+CANREPEAT: yes
+QUESTION: FIXED-SCALAR4
+VALUE: 0.0
+HELP: Input the fixed value for scalar data4 boundary.
+END CONDITION
+NUMBER: 13 CONDITION: SC4-FLUX
+CONDTYPE: over surfaces
+CONDMESHTYPE: over face elements
+CANREPEAT: yes
+QUESTION: SC4-FLUX
+VALUE: 0.0
+HELP: Input the flux for scalar data4.
+END CONDITION
+NUMBER: 14 CONDITION: SC4-TRANSFER
+CONDTYPE: over surfaces
+CONDMESHTYPE: over face elements
+CANREPEAT: yes
+QUESTION: COEFFICIENT
+VALUE: 0.0
+HELP: Input the film coefficient for scalar data4.
+QUESTION: SC4-TRANSFER
+VALUE: 0.0
+HELP: Input the value for scalar data4 transfer.
+END CONDITION
+NUMBER: 15 CONDITION: FIXED-SCALAR5
+CONDTYPE: over surfaces
+CONDMESHTYPE: over face elements
+CANREPEAT: yes
+QUESTION: FIXED-SCALAR5
+VALUE: 0.0
+HELP: Input the fixed value for scalar data5 boundary.
+END CONDITION
+NUMBER: 16 CONDITION: SC5-FLUX
+CONDTYPE: over surfaces
+CONDMESHTYPE: over face elements
+CANREPEAT: yes
+QUESTION: SC5-FLUX
+VALUE: 0.0
+HELP: Input the flux for scalar data5.
+END CONDITION
+NUMBER: 17 CONDITION: SC5-TRANSFER
+CONDTYPE: over surfaces
+CONDMESHTYPE: over face elements
+CANREPEAT: yes
+QUESTION: COEFFICIENT
+VALUE: 0.0
+HELP: Input the film coefficient for scalar data5.
+QUESTION: SC5-TRANSFER
+VALUE: 0.0
+HELP: Input the value for scalar data5 transfer.
+END CONDITION
+NUMBER: 18 CONDITION: CFD-FINAS
+CONDTYPE: over surfaces
+CONDMESHTYPE: over face elements
+CANREPEAT: yes
+QUESTION: Coupling#CB#(0,1)
+VALUE: 0
+END CONDITION
+NUMBER: 19 CONDITION: FIXED-DENSITY
+CONDTYPE: over surfaces
+CONDMESHTYPE: over face elements
+CANREPEAT: yes
+QUESTION: DENSITY
+VALUE: 0.0
+END CONDITION
+NUMBER: 20 CONDITION: SOLID
+CONDTYPE: over volumes
+CONDMESHTYPE: over body elements
+CANREPEAT: yes
+QUESTION: FIXED_VELOCITY
+VALUE: 0.0
+END CONDITION
+NUMBER: 21 CONDITION: HEAT-SOURCE
+CONDTYPE: over volumes
+CONDMESHTYPE: over body elements
+CANREPEAT: yes
+QUESTION: HEAT_SOURCE
+VALUE: 0.0
+END CONDITION
+NUMBER: 22 CONDITION: SC2-SOURCE
+CONDTYPE: over volumes
+CONDMESHTYPE: over body elements
+CANREPEAT: yes
+QUESTION: SC2_SOURCE
+VALUE: 0.0
+END CONDITION
+NUMBER: 23 CONDITION: SC3-SOURCE
+CONDTYPE: over volumes
+CONDMESHTYPE: over body elements
+CANREPEAT: yes
+QUESTION: SC3_SOURCE
+VALUE: 0.0
+END CONDITION
+NUMBER: 24 CONDITION: SC4-SOURCE
+CONDTYPE: over volumes
+CONDMESHTYPE: over body elements
+CANREPEAT: yes
+QUESTION: SC4_SOURCE
+VALUE: 0.0
+END CONDITION
+NUMBER: 25 CONDITION: SC5-SOURCE
+CONDTYPE: over volumes
+CONDMESHTYPE: over body elements
+CANREPEAT: yes
+QUESTION: SC5_SOURCE
+VALUE: 0.0
+END CONDITION
+NUMBER: 26 CONDITION: Opaque-Wall
+CONDTYPE: over surfaces
+CONDMESHTYPE: over face elements
+CANREPEAT: yes
+QUESTION: Emissivity
+VALUE: 1.0
+END CONDITION
+BOOK:Initial
+NUMBER: 27 CONDITION: Initial-Value
+CONDTYPE: over volumes
+CONDMESHTYPE: over body elements
+CANREPEAT: yes
+QUESTION: Initial_Value_[Pres]:
+VALUE: 0.0
+QUESTION: Initial_Value_[Vx]:
+VALUE: 0.0
+QUESTION: Initial_Value_[Vy]:
+VALUE: 0.0
+QUESTION: Initial_Value_[Vz]:
+VALUE: 0.0
+QUESTION: Initial_Value_[Temp]:
+VALUE: 0.0
+QUESTION: Initial_Value_[Ke]:
+VALUE: 1.0E-10
+QUESTION: Initial_Value_[Ep]:
+VALUE: 1.0E-10
+QUESTION: Initial_Value_[Scalar2]:
+VALUE: 0.0
+QUESTION: Initial_Value_[Scalar3]:
+VALUE: 0.0
+QUESTION: Initial_Value_[Scalar4]:
+VALUE: 0.0
+QUESTION: Initial_Value_[Scalar5]:
+VALUE: 0.0
+END CONDITION

@@ -1,0 +1,55 @@
+model new
+
+; blocks created in Rhino and exported to 3DEC commands using vtpt program.
+program call 'rigid_blocks.dat'
+; Block properties, stress units of MPa
+
+; pillars and base
+rblock group 'arch' range position-z 25 100
+rblock attribute density 0.0025 damp 0.7 range group 'arch' not
+
+; arch
+rblock attribute density 0.015 damp 0.7 range group 'arch' 
+
+; set gravity
+model grav 0 0 -10
+
+; fix the bottom blocks 
+rblock fix vel spin range position-z -2 0
+
+; set up the cmat
+contact cmat default model linearpbond method deformability            ...
+             emod 1e5 kratio 0.5 pb_deformability emod 1e5 kratio 0.5  ...
+             property fric 0.7 pb_ten 1e2 pb_coh 1e2 lin_mode 1 dp_nratio 0.2
+
+; slightly increase the size of the rigid blocks to be bonded so that
+; they overlap: this needs to happen so the bonds are created
+rblock scale relative 1.001 range id-list 19 28 29 36 77 84 85 94
+
+; create the contacts
+model clean all
+
+; bond the contacts 
+contact group 'glued' range plane dip 90 dip-direction 90 ...
+                            origin -6.5 0.5 24.5 dist 0.01 position-z 15 100
+contact group 'glued' range plane dip 90 dip-direction 90 ...
+                            origin 6.5 0.5 24.5 dist 0.01 position-z 15 100
+contact group 'glued' range plane dip 90 dip-direction 90 ...
+                            origin -18.7 0.5 16.6 dist 0.01 position-z 15 100
+contact group 'glued' range plane dip 90 dip-direction 90 ...
+                            origin 18.7 0.5 16.6  dist 0.01 position-z 15 100
+contact method bond range group 'glued'
+model save 'buttress_ini'
+plot 'the_system' export bitmap filename 'initial_buttress'
+
+; cycle the model with the pillars
+model restore 'buttress_ini'
+model solve 
+plot 'the_system' export bitmap filename 'settled_buttress'
+
+; cycle the model without pillars
+model restore 'buttress_ini'
+rblock delete range position-x -100 -6.5
+rblock delete range position-x 6.5 100
+model solve time-total 2.0
+plot 'the_system' export bitmap filename 'failing_buttress'

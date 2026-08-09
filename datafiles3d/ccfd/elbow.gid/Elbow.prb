@@ -1,0 +1,232 @@
+PROBLEM DATA
+TITLE: General
+QUESTION: TITLE
+VALUE: Elbow
+HELP: Input the title name of the problem.
+QUESTION: Type_of_problem:#CB#(STEADY,UNSTEADY,EXPLICIT)
+VALUE: EXPLICIT
+DEPENDENCIES: (STEADY  ,SET    ,Use_VOF,0        ,RESTORE,Relax_factor,#CURRENT#)
+DEPENDENCIES: (UNSTEADY,RESTORE,Use_VOF,#CURRENT#,RESTORE,Relax_factor,#CURRENT#)
+DEPENDENCIES: (EXPLICIT,RESTORE,Use_VOF,#CURRENT#,SET    ,Relax_factor,#CURRENT#)
+QUESTION: Turb_model:#CB#(NO,k_e,LES)
+VALUE: NO
+DEPENDENCIES: (k_e,RESTORE,Relax_factor_Ke,#CURRENT#,RESTORE,Type_of_solver_ke,#CURRENT#,RESTORE,MSTEP_ke,#CURRENT#,RESTORE,EPS_ke,#CURRENT#) (NO,SET,Relax_factor_Ke,#CURRENT#,SET,Type_of_solver_ke,#CURRENT#,SET,MSTEP_ke,#CURRENT#,SET,EPS_ke,#CURRENT#) (LES,SET,Relax_factor_Ke,#CURRENT#,SET,Type_of_solver_ke,#CURRENT#,SET,MSTEP_ke,#CURRENT#,SET,EPS_ke,#CURRENT#)
+HELP: Select the problem type. "NO" selects laminar flow.
+QUESTION: Compressibility:#CB#(Incompressible_flow,Compressible_flow)
+VALUE: Incompressible_flow
+HELP: Select compressibility of fluid.
+QUESTION: Sweep:
+VALUE: 1
+HELP: Set the number of sweep; the number up to the end for STEADY and the number within one step for UNSTEADY.
+QUESTION: Relax_factor:
+VALUE: 0.8
+HELP: Input the relaxation factor.
+QUESTION: Relax_factor_P:
+VALUE: 0.2
+HELP: Input the relaxation factor for pressure.
+QUESTION: Relax_factor_Ke:
+VALUE: 0.8
+HELP: Input the relaxation factor for Ke.
+QUESTION: Relax_factor_T:
+VALUE: 0.8
+HELP: Input the relaxation factor for temperature.
+QUESTION: Relax_factor_S2:
+VALUE: 0.8
+HELP: Input the relaxation factor for scalar2.
+QUESTION: Relax_factor_S3:
+VALUE: 0.8
+HELP: Input the relaxation factor for scalar3.
+QUESTION: Relax_factor_S4:
+VALUE: 0.8
+HELP: Input the relaxation factor for scalar4.
+QUESTION: Relax_factor_S5:
+VALUE: 0.8
+HELP: Input the relaxation factor for scalar5.
+QUESTION: Scheme(0.0-1.0):
+VALUE: 0.0
+HELP: Input flag for the scheme;0-upwind, 1-center difference.
+TITLE: Restart
+QUESTION: Restart:#CB#(NO,YES)
+VALUE: NO
+QUESTION: Restart_File:
+VALUE: restart
+TITLE: Monitoring point
+QUESTION: Monitoring_Point:
+VALUE: 0
+HELP: Input cell number to display monitoring point.
+TITLE: Scalar
+QUESTION: TEMPERA:#CB#(NO,YES)
+VALUE: NO
+DEPENDENCIES: (NO,SET,Scalar2,NO,SET,Relax_factor_T,#CURRENT#,SET,Type_of_solver_temperature,#CURRENT#,SET,MSTEP_temperature,#CURRENT#,SET,EPS_temperature,#CURRENT#) (YES,RESTORE,Scalar2,#CURRENT#,RESTORE,Relax_factor_T,#CURRENT#,RESTORE,Type_of_solver_temperature,#CURRENT#,RESTORE,MSTEP_temperature,#CURRENT#,RESTORE,EPS_temperature,#CURRENT#)
+HELP: check the box to calculate the temperature.
+QUESTION: Scalar2:#CB#(NO,YES)
+VALUE: NO
+DEPENDENCIES: (NO,SET,Scalar3,NO,SET,Relax_factor_S2,#CURRENT#,SET,Type_of_solver_scalar2,#CURRENT#,SET,MSTEP_scalar2,#CURRENT#,SET,EPS_scalar2,#CURRENT#) (YES,RESTORE,Scalar3,#CURRENT#,RESTORE,Relax_factor_S2,#CURRENT#,RESTORE,Type_of_solver_scalar2,#CURRENT#,RESTORE,MSTEP_scalar2,#CURRENT#,RESTORE,EPS_scalar2,#CURRENT#)
+HELP: check the box to calculate the scalar value 2.
+QUESTION: Scalar3:#CB#(NO,YES)
+VALUE: NO
+DEPENDENCIES: (NO,SET,Scalar4,NO,SET,Relax_factor_S3,#CURRENT#,SET,Type_of_solver_scalar3,#CURRENT#,SET,MSTEP_scalar3,#CURRENT#,SET,EPS_scalar3,#CURRENT#) (YES,RESTORE,Scalar4,#CURRENT#,RESTORE,Relax_factor_S3,#CURRENT#,RESTORE,Type_of_solver_scalar3,#CURRENT#,RESTORE,MSTEP_scalar3,#CURRENT#,RESTORE,EPS_scalar3,#CURRENT#)
+HELP: check the box to calculate the scalar value 3.
+QUESTION: Scalar4:#CB#(NO,YES)
+VALUE: NO
+DEPENDENCIES: (NO,SET,Scalar5,NO,SET,Relax_factor_S4,#CURRENT#,SET,Type_of_solver_scalar4,#CURRENT#,SET,MSTEP_scalar4,#CURRENT#,SET,EPS_scalar4,#CURRENT#) (YES,RESTORE,Scalar5,#CURRENT#,RESTORE,Relax_factor_S4,#CURRENT#,RESTORE,Type_of_solver_scalar4,#CURRENT#,RESTORE,MSTEP_scalar4,#CURRENT#,RESTORE,EPS_scalar4,#CURRENT#)
+HELP: check the box to calculate the scalar value 4.
+QUESTION: Scalar5:#CB#(NO,YES)
+VALUE: NO
+DEPENDENCIES: (NO,SET,Relax_factor_S5,#CURRENT#,SET,Type_of_solver_scalar5,#CURRENT#,SET,MSTEP_scalar5,#CURRENT#,SET,EPS_scalar5,#CURRENT#) (YES,RESTORE,Relax_factor_S5,#CURRENT#,RESTORE,Type_of_solver_scalar5,#CURRENT#,RESTORE,MSTEP_scalar5,#CURRENT#,RESTORE,EPS_scalar5,#CURRENT#)
+HELP: check the box to calculate the scalar value 5.
+TITLE: equation cond
+QUESTION: Type_of_solver_velocity:#CB#(CG,AMG)
+VALUE: CG
+QUESTION: MSTEP_velocity:
+VALUE: 10000
+HELP: Input the max iteration for velocity.
+QUESTION: EPS_velocity:
+VALUE: 1.0E-10
+HELP: Input the margin of error for velocity.
+QUESTION: Type_of_solver_pressure:#CB#(CG,AMG)
+VALUE: AMG
+QUESTION: MSTEP_pressure:
+VALUE: 10000
+HELP: Input the max iteration for pressure.
+QUESTION: EPS_pressure:
+VALUE: 1.0E-10
+HELP: Input the margin of error for pressure.
+QUESTION: Type_of_solver_ke:#CB#(CG,AMG)
+VALUE: CG
+QUESTION: MSTEP_ke:
+VALUE: 10000
+HELP: Input the max iteration for ke.
+QUESTION: EPS_ke:
+VALUE: 1.0E-10
+HELP: Input the margin of error for ke.
+QUESTION: Type_of_solver_temperature:#CB#(CG,AMG)
+VALUE: CG
+QUESTION: MSTEP_temperature:
+VALUE: 10000
+HELP: Input the max iteration for temperature.
+QUESTION: EPS_temperature:
+VALUE: 1.0E-10
+HELP: Input the margin of error for temperature.
+QUESTION: Type_of_solver_scalar2:#CB#(CG,AMG)
+VALUE: CG
+QUESTION: MSTEP_scalar2:
+VALUE: 10000
+HELP: Input the max iteration for scalar2.
+QUESTION: EPS_scalar2:
+VALUE: 1.0E-10
+HELP: Input the margin of error for scalar2.
+QUESTION: Type_of_solver_scalar3:#CB#(CG,AMG)
+VALUE: CG
+QUESTION: MSTEP_scalar3:
+VALUE: 10000
+HELP: Input the max iteration for scalar3.
+QUESTION: EPS_scalar3:
+VALUE: 1.0E-10
+HELP: Input the margin of error for scalar3.
+QUESTION: Type_of_solver_scalar4:#CB#(CG,AMG)
+VALUE: CG
+QUESTION: MSTEP_scalar4:
+VALUE: 10000
+HELP: Input the max iteration for scalar4.
+QUESTION: EPS_scalar4:
+VALUE: 1.0E-10
+HELP: Input the margin of error for scalar4.
+QUESTION: Type_of_solver_scalar5:#CB#(CG,AMG)
+VALUE: CG
+QUESTION: MSTEP_scalar5:
+VALUE: 10000
+HELP: Input the max iteration for scalar5.
+QUESTION: EPS_scalar5:
+VALUE: 1.0E-10
+HELP: Input the margin of error for scalar5.
+TITLE: Parallel
+QUESTION: Use_Parallel#CB#(0,1)
+VALUE: 0
+STATE: HIDDEN
+QUESTION: Host_Name(HostName,CPU)
+VALUE: #N# 2 HostName 1
+STATE: HIDDEN
+TITLE: VOF
+QUESTION: Use_VOF#CB#(0,1)
+VALUE: 0
+DEPENDENCIES: (1,RESTORE,Courant_number,#CURRENT#,RESTORE,phase2_VISCOSITY,#CURRENT#,HIDE,phase2_TERMAL_DIFF_COEF,#CURRENT#,RESTORE,phase2_DENSITY,#CURRENT#,RESTORE,phase2_EXCO,#CURRENT#,RESTORE,TEMPERA,YES,RESTORE,Scalar2,YES) (0,SET,number_of_phase,#CURRENT#,SET,Courant_number,#CURRENT#,SET,phase2_VISCOSITY,#CURRENT#,HIDE,phase2_TERMAL_DIFF_COEF,#CURRENT#,SET,phase2_DENSITY,#CURRENT#,SET,phase2_EXCO,#CURRENT#)
+QUESTION: number_of_phase:
+VALUE: 2
+STATE: HIDDEN
+HELP: Input the number of phase for vof.
+QUESTION: Courant_number:
+VALUE: 0.3
+HELP: Input the courant number for vof.
+QUESTION: phase2_VISCOSITY:
+VALUE: 1.8e-05
+HELP: Input the viscosity o phase2.
+QUESTION: phase2_TERMAL_DIFF_COEF:
+VALUE: 1.0
+HELP: Input the thermal diffusivity of phase2.
+QUESTION: phase2_DENSITY:
+VALUE: 1.0
+HELP: Input then density of phase2.
+QUESTION: phase2_EXCO:
+VALUE: 0.0
+HELP: Input the thermal expansion coefficient of phase2.
+TITLE: DO Model
+QUESTION: Use_DOM#CB#(0,1)
+VALUE: 0
+QUESTION: Flow_Ite_per_Rad_Ite:
+VALUE: 1
+QUESTION: Theta_Divisions:
+VALUE: 2
+QUESTION: Phi_Divisions:
+VALUE: 2
+QUESTION: Theta_Pixels:
+VALUE: 1
+QUESTION: Phi_Pixels:
+VALUE: 1
+TITLE: Coupling
+QUESTION: Use_Coupling#CB#(0,1)
+VALUE: 1
+QUESTION: Coupling_Const
+VALUE: 2
+STATE: HIDDEN
+QUESTION: Time_Table(start,end,step)
+VALUE: #N# 3 0 1 0.001
+END PROBLEM DATA
+INTERVAL DATA
+TITLE: Control
+QUESTION: Number_of_Steps:
+VALUE: 50
+HELP: Input the number of time steps for UNSTEADY and 1 for STEADY.
+QUESTION: Time_step_increment:
+VALUE: 0.02
+HELP: Input the time increment per step for UNSTEADY and 1.0 for STEADY.
+QUESTION: Step_freq._post_process:
+VALUE: 1
+QUESTION: AsciiOutput:#CB#(NO,YES)
+VALUE: NO
+QUESTION: OutputFileName:
+VALUE: Result
+TITLE: Gravity
+QUESTION: Gravity_Value:
+VALUE: 0.0
+HELP: Input the gravity value.
+QUESTION: Gravity_X_direction:
+VALUE: 0.0
+HELP: Input the X component of the unit gravity direction.
+QUESTION: Gravity_Y_direction:
+VALUE: 0.0
+HELP: Input the Y component of the unit gravity direction.
+QUESTION: Gravity_Z_direction:
+VALUE: -1.0
+HELP: Input the Z component of the unit gravity direction.
+TITLE: Criterion
+QUESTION: Criterion_temp:
+VALUE: 0.0
+HELP: Input the reference temperature for thermal expansion to caluculate floating force.
+QUESTION: Reference_press:
+VALUE: 101325.
+HELP: Input the reference pressure.
+QUESTION: Reference_density:
+VALUE: 1.178
+HELP: Input the reference density.
+END INTERVAL DATA

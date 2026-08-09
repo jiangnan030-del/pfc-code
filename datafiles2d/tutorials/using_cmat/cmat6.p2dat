@@ -1,0 +1,72 @@
+; fname: cmat6.p2dat
+;
+;  Illustrate advanced usage of the CMAT with the PROXIMITY keyword  
+;==============================================================================
+model new
+model random 10001
+
+model domain extent -1.5e-2 1.5e-2 condition destroy
+contact cmat default model linear property kn 1e6
+
+wall generate box -1.0e-2 1.0e-2 one-wall
+ball distribute porosity 0.12         ...
+                radius 0.4e-3 0.6e-3 ...
+                box -1.0e-2 1.0e-2 
+                
+ball attribute density 2000.0 damp 0.7
+model mechanical timestep update 1 increment 1.05
+model cycle 1000 calm 10
+model solve
+model save 'cmat6'
+
+; install linearpbond model for ball-ball contacts
+contact model 'linearpbond' range contact type 'ball-ball' 
+
+; set properties for linearpbond contacts
+contact property kn 1e6 ks 1e6 fric 0.5 ...
+                 pb_kn 1e6 pb_ks 1e6    ...
+                 pb_ten 1e8 pb_coh 1e8  ...
+                 range contact model 'linearpbond'
+
+; at this stage, the contacts are not bonded - bond them
+contact method bond ; gap 0.0
+model save 'cmat6a'
+
+; we can also bond inactive contacts with a positive gap
+contact method bond gap 5e-5
+model save 'cmat6b'
+
+; Here we want to bond contacts with a gap <= 2.5e-4
+; But the contacts that have been created do
+; not have such large gaps (even inactive contacts)
+contact method bond gap 2.5e-4
+model save 'cmat6c'
+
+; To make sure inactive contacts exist at the desired bond installation gap,
+; the PROXIMITY keyword must be used in the CMAT.
+model restore 'cmat6'
+contact cmat default type ball-ball   ...
+                   model linearpbond  ...
+                   property kn 1e6    ...
+                   proximity 2.5e-4
+             
+; The CLEAN command forces contact detection
+; Upon execution, new contacts are created, and we are sure that pairs with a 
+; separation distance <= 2.5e-4 now have an inactive contact
+model clean
+; The CMAT APPLY command must also be executed to modify existing contact
+contact cmat apply range contact type 'ball-ball'
+
+; the contacts with a gap <= 2.5e-4 can now be modified
+contact model linearpbond range contact type 'ball-ball' gap 2.5e-4
+contact property kn 1e6 ks 1e6 fric 0.5 ...
+                 pb_kn 1e6 pb_ks 1e6    ...
+                 pb_ten 1e8 pb_coh 1e8  ...
+                 range contact model 'linearpbond'
+                 
+contact method bond gap 2.5e-4
+model save 'cmat6d'
+
+program return
+;==============================================================================
+; eof: cmat6.p2dat

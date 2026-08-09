@@ -1,0 +1,18 @@
+; fname: make_fractured.p2dat
+;
+; restore an intact BPM - generate a DFN and install the smoothjoint 
+; contact model at contacts intercepted by the fractures 
+;===========================================================================
+model restore 'intact'
+model random 10001
+fracture template create 'test' size power-law 3 size-limits 1 100
+fracture generate dfn 'fractures' template 'test' ...
+         generation-box -4 4 -8 8 p10 1.5 begin (0,-8) end (0,8)
+fracture combine angle 30.0 distance 1.0 merge
+fracture combine angle 40.0 distance 1.0 merge
+fracture contact-model model 'smoothjoint' install 
+model save 'fractured'
+return
+;===========================================================================
+; eof: make_fractured.p2dat
+

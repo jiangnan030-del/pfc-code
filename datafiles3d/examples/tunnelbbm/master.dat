@@ -1,0 +1,3 @@
+program call 'geometry.dat'
+program call 'stress.dat'
+program call 'excavate.dat'

@@ -1,0 +1,112 @@
+
+fish define setup_tt
+  ; identify boundary balls
+  loop foreach local c contact.list.all
+      if contact.offset.z(c) # 0 then
+          ball.group(contact.end1(c)) = 'boundary'
+          ball.group(contact.end2(c)) = 'boundary'
+      endif
+  endloop
+  
+  ; install measurement sphere
+  Lx0 = domain.max.x() - domain.min.x()
+  Ly0 = domain.max.y() - domain.min.y()
+  Lz0 = domain.max.z() - domain.min.z()
+  local mr = 0.5*math.min(Lx0,Ly0,Lz0)
+  measure.radius(measure.find(1)) = 0.9*mr
+  
+  global bright = ball.near(domain.max.x(),0.0,0.0) 
+  global bleft  = ball.near(domain.min.x(),0.0,0.0) 
+  global bfront = ball.near(0.0,domain.max.y(),0.0) 
+  global bback  = ball.near(0.0,domain.min.y(),0.0) 
+  global btop = ball.near(0.0,0.0,domain.max.z()) 
+  global bbot = ball.near(0.0,0.0,domain.min.z()) 
+  ball.group(bright ,'gage') = 'right'
+  ball.group(bleft  ,'gage') = 'left'
+  ball.group(bfront ,'gage') = 'front'
+  ball.group(bback  ,'gage') = 'back'  
+  ball.group(btop   ,'gage') = 'top'
+  ball.group(bbot   ,'gage') = 'bot'
+
+; enlarge domain extent
+  domain.min.x = 1.5*domain.min.x
+  domain.max.x = 1.5*domain.max.x
+  domain.min.y = 1.5*domain.min.y
+  domain.max.y = 1.5*domain.max.y
+  domain.min.z = 1.5*domain.min.z
+  domain.max.z = 1.5*domain.max.z
+  ;
+  Lx0 = ball.pos.x(bright) - ball.pos.x(bleft)
+  Ly0 = ball.pos.y(bfront) - ball.pos.y(bback)
+  Lz0 = ball.pos.z(btop) - ball.pos.z(bbot)  
+end
+@setup_tt
+
+model domain condition stop
+model clean all
+
+contact method bond gap @igap range contact all 
+
+; reset the proximity, delete inactive contacts 
+; and clean the model to reduce the number of inactive contacts
+contact cmat proximity 0.0
+contact delete range contact inactive
+model clean all
+model cycle 1
+[s_xx = measure.stress.xx(measure.find(1))]
+[s_yy = measure.stress.yy(measure.find(1))]
+[s_zz = measure.stress.zz(measure.find(1))]
+
+ball fix velocity-z range group 'boundary'
+
+fish define e_xx
+  Lx = ball.pos.x(bright) - ball.pos.x(bleft)
+  e_xx = (Lx - Lx0) / Lx0
+end
+fish define e_yy
+  Ly = ball.pos.y(bfront) - ball.pos.y(bback)
+  e_yy = (Ly - Ly0) / Ly0
+end
+fish define e_zz
+  Lz = ball.pos.z(btop) - ball.pos.z(bbot)
+  e_zz = (Lz - Lz0) / Lz0
+end
+
+fish define poiss_ratio
+  poiss_ratio = - 0.5*(e_xx+e_yy) / e_zz
+end
+
+fish define emod_secant
+  emod_secant = s_zz / e_zz
+end
+
+history purge
+fish history name 'e_xx' @e_xx 
+fish history name 'e_yy' @e_yy 
+fish history name 'e_zz' @e_zz 
+fish history name 'emod_secant' @emod_secant
+fish history name 'poiss_ratio' @poiss_ratio 
+
+fish define s_zz
+  s_zz = measure.stress.zz(measure.find(1))
+end
+
+fish define halt
+  halt = false
+  s_zz_min = math.min(s_zz,s_zz_min)
+  if s_zz > peak_frac*s_zz_min
+    halt = 1
+  endif
+end
+
+model domain strain-rate-zz [-strain_rate]
+
+[peak_frac = 0.8 ]
+model save [string.build('ucs2_%1-initial',tag)]
+model solve fish-halt @halt ...
+            cycles 100 and
+model save [string.build('ucs2_%1-final',tag)]
+
+; ===================================================================
+program return
+;EOF

@@ -1,0 +1,19 @@
+BeginZE C:\src\a_pfc_git\ccfd\test3d\new_coupled_examples\Elbow.gid\Elbow.vv
+   x -2.86383 2.86383
+   y 1.57726 -1.57726
+   z 21.2034 26.5295
+   e 1.77535
+   v -0.707107 -6.18172e-008 -6.18172e-008
+   r -0.707107
+   m 1 7.64274e-015 1.74846e-007 0 1.74846e-007 -4.37114e-008 -1 0 0 1 -4.37114e-008 0 0 0 0 1
+   c -0.975 0 0.475
+   pd 24.3414
+   pno 21.2034
+   pfo 26.5295
+   pf 3.98107
+   pv 1
+   NowUse 1
+   DrawingType 0
+   LightVector 90 90 150 0
+EndZE C:\src\a_pfc_git\ccfd\test3d\new_coupled_examples\Elbow.gid\Elbow.vv
+

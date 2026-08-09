@@ -1,0 +1,6 @@
+model rest 'parallel_ucs'
+-test check float @peak_stress 1.026127e+08 tol 1e5
+
+model rest 'fj_ucs'
+-test check float @peak_stress 1.151858e+08 tol 1e5
+

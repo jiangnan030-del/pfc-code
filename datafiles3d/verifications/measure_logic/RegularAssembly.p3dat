@@ -1,0 +1,76 @@
+; fname: RegularAssembly.p3dat
+; Build a regular granular assembly and compute porosity 
+; using the measure logic in PFC
+; =============================================================================
+;
+
+model new
+call 'MeasureLogic.p3dat'
+
+fish define regular_assembly(size, nres,itype)
+; Create a regular packing of mono-sized balls in a cubic domain
+; ARGUMENTS:
+;  - size : size of the domain
+;  - nres : resolution of the packing
+;  - itype: type of packing (0:simple cubic; #0: hexagonal)
+; 
+  global    xmin       = 0.0
+  global    ymin       = 0.0
+  global    xmax       = size
+  global    ymax       = size
+  global    zmin       = 0.0
+  global    zmax       = size
+
+  global    radius      = size / (2.0*nres)
+  local     numballs    = nres^2
+
+  command
+    model domain extent @xmin @xmax @ymin @ymax @zmin @zmax
+  end_command
+
+  if itype = 0 then
+    command
+      ball generate rad @radius number @numballs cubic
+    end_command
+  else
+    command
+      ball generate rad @radius number @numballs hexagonal
+    end_command
+  endif
+end
+
+fish def display_error(porosity, s)
+  global error = check_error(porosity,s,radius)
+  local oo = io.out(string.build("Average Error = %1%)",error))
+end
+
+@define_meas_parameters(5000, 0.0) ;define measurement parameters
+
+; Simple Cubic packing - low resolution
+@regular_assembly(18.0, 9, 0)
+@create_meas_regions
+@display_error(0.4764,'cubic_lores')
+model save 'cubic_lores'
+;
+; Simple Cubic packing - high resolution
+ball delete
+@regular_assembly(18.0, 30, 0)
+@display_error(0.4764,'cubic_hires')
+model save 'cubic_hires'
+;
+; Hexagonal packing - low resolution
+ball delete
+@regular_assembly(18.0, 9, 1)
+@display_error(0.2595,'hexa_lores')
+model save 'hexa_lores'
+;
+; Hexagonal packing - high resolution
+ball delete
+@regular_assembly(18.0, 30, 1)
+@display_error(0.2595,'hexa_hires')
+model save 'hexa_hires'
+
+model save 'RegularAssembly'
+
+; ============================================================================
+; EoF: RegularAssembly.p3dat

@@ -1,0 +1,19 @@
+BeginZE C:\src\a_pfc_git\ccfd\test3d\new_coupled_examples\Cylinder.gid\Cylinder.vv
+   x -12.5795 12.5795
+   y 6.9282 -6.9282
+   z -24.7846 16.7846
+   e 6.9282
+   v 0.336174 0.411993 0.846614
+   r 0.0222382
+   m -0.772986 0.239348 0.587542 0 0.314657 -0.659534 0.682646 0 0.550894 0.71255 0.434498 0 0 0 0 1
+   c 0 0 4
+   pd 0
+   pno 0
+   pfo 0
+   pf 4
+   pv 0
+   NowUse 0
+   DrawingType 0
+   LightVector 90 90 150 0
+EndZE C:\src\a_pfc_git\ccfd\test3d\new_coupled_examples\Cylinder.gid\Cylinder.vv
+

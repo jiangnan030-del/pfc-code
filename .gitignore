@@ -1,0 +1,15 @@
+# PFC Save Files (large binary states)
+*.sav
+
+# Log files
+*.log
+
+# System files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Temporary files
+*.tmp
+*.bak
+*~

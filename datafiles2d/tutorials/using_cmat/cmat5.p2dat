@@ -1,0 +1,63 @@
+; fname: cmat5.p2dat
+;
+;  Illustrate advanced usage of the CMAT 
+;  Modify existing contacts through the CMAT APPLY or CONTACT commands 
+;==============================================================================
+model restore 'cmat3'
+
+; modify the 1st optional slot of the CMAT (contacts between glass balls)
+contact cmat modify 1 model linearpbond                        ...
+                    method deformability    emod 1e6 krat 0.5  ...
+                           pb_deformability emod 1e6 krat 0.5  ...
+                    property fric 0.25 dp_nratio 0.2           ...
+                           pb_ten 1e8 pb_coh 1e8 pb_fa 30.0  
+                      
+; apply the CMAT - every contact existing in the model will be processed 
+; and a new contact model will be installed. Note that all information in the 
+; existing contact model will be lost when it is replaced by a new contact model.
+contact cmat apply
+contact method bond
+model save 'cmat5a'
+model cycle 10
+model solve
+model save 'cmat5b'
+
+model restore 'cmat3'
+
+; modify the 1st optional slot of the CMAT (contacts between glass balls)
+contact cmat modify 1 model linearpbond                        ...
+                    method deformability    emod 1e6 krat 0.5  ...
+                           pb_deformability emod 1e6 krat 0.5  ...
+                    property fric 0.25 dp_nratio 0.2           ...
+                             pb_ten 1e8 pb_coh 1e8 pb_fa 30.0  
+                      
+; apply the CMAT to select contacts only. Note however that since the 
+; CMAT has been modified, further contacts created between glass balls will
+; have the linear parallel-bond contact model installed.
+contact cmat apply range group 'glass' matches 2
+contact method bond
+model save 'cmat5c'
+model cycle 10
+model solve
+model save 'cmat5d'
+
+model restore 'cmat3'
+                                 
+; modify existing contacts between glass balls using contact commands.
+contact model linearpbond range group 'glass' matches 2 contact gap 0.0
+contact method deformability emod 1e6 krat 0.5     ...
+               pb_deformability emod 1e6 krat 0.5  ...
+               bond                                ...
+        range contact model 'linearpbond'
+                 
+contact property fric 0.25 dp_nratio 0.2           ...
+                 pb_ten 1e8 pb_coh 1e8 pb_fa 30.0  ...
+        range group 'glass' matches 2
+                
+model cycle 10
+model solve
+model save 'cmat5e'
+
+return
+;==============================================================================
+; eof: cmat5.p2dat

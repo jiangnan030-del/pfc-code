@@ -1,0 +1,75 @@
+; filename: make_brick.dat
+; 
+; Generate an isotropic, homogeneous assembly of balls with periodic
+; boundary conditions, and settle under low isotropic confinement 
+; using a servo-control algorithm to distort the periodic domain 
+;
+; ===================================================================
+
+; Setup domain extent (aspect ratio 2:1) and boundary conditions
+model domain extent [-0.5*resolution*davg] [0.5*resolution*davg] ...
+                    [-0.5*resolution*davg] [0.5*resolution*davg] ...
+                    [-1.0*resolution*davg] [1.0*resolution*davg] ...
+                     condition periodic
+                     
+; Distribute balls to a target low porosity and set density and 
+; local damping attributes
+[dmin = 2.0*davg / (1.0 + dratio)]
+[dmax = dmin * dratio]
+ball distribute porosity 0.36 radius [0.5*dmin] [0.5*dmax] 
+ball attribute density 2000.0 damp 0.7
+
+; Choose the contact model
+contact cmat default model linear ...
+                     method deformability emod 1e8 kratio 2.5
+
+; Monitoring
+model history name 'ratio-average' mechanical ratio-average
+model history name 'timestep' timestep
+
+; Perform some initial cycles and periodically reset the 
+; spin and velocities to zero to relax the inital overlaps,
+; then solve to equilibrium 
+model cycle 1000 calm 100
+model solve ratio-average 5e-3
+model save [string.build('brick_%1-pkg',tag)]
+
+; Use a servo-control algorithm to settle the assembly under
+; a presecribed low isotropic stress state
+
+; Load utility functions
+program call 'servo.fis' suppress
+
+; Parameter definitions (used by the servo-control function)
+[servo_do_z = true     ]  
+[servo_ts_xx = -1.0e5  ]
+[servo_ts_yy = -1.0e5  ]
+[servo_ts_zz = -1.0e5  ]
+[servo_gain  =  1.0e-4 ]
+[servo_tol = 1e-2]
+[s_xx = 0.0]
+[s_yy = 0.0]
+[s_zz = 0.0]
+
+[Lx = domain.max.x() - domain.min.x()]
+[Ly = domain.max.y() - domain.min.y()]
+[Lz = domain.max.z() - domain.min.z()]
+measure create id 1 radius [0.95*0.5*Lx]
+
+; Monitoring
+fish history name 's_xx' @s_xx
+fish history name 's_yy' @s_yy
+fish history name 's_zz' @s_zz
+fish history name 'L_x'  @Lx
+fish history name 'L_y'  @Ly
+fish history name 'L_z'  @Lz
+
+model domain tolerance 1e-3
+model solve fish-call 1.0 @servo_domain ...
+            fish-halt @servo_halt ...
+            ratio-average 1e-3 ...
+            cycles 100 and
+model save [string.build('brick_%1-iso',tag)]
+; ===================================================================
+program return
+; EOF: make_brick.dat

@@ -1,0 +1,69 @@
+; Create the rigid block geometry. Initially this will just 
+; be a tetrahedral packing that will later be cut. 
+model new
+
+; Specify the domain extent
+model domain extent -10 10 
+
+; Create a geometry set and construct rigid blocks to fill the 
+; interior of the set. The rigid blocks are tetrahedra with a 
+; maximum edge length of 0.4. 
+geometry set 'blocks' 
+geometry generate box -6.0 6.0 -1.5 1.5 -6.0 6.0
+rblock construct from-geometry 'blocks' maximum-edge 0.4 
+
+; Create the tunnel as a geometry set. The tunnel is composed 
+; of a cylinder and a box
+geometry set 'tunnel-box'
+geometry generate box -2 2 -1.5 1.5 -2 2
+geometry set 'tunnel-arc'
+geometry generate cylinder base 1 -1.5 1  radius 1.0 axis 0 1.0 0 ...
+                                          height 3.0 resolution 0.4 cap false
+geometry generate cylinder base -1 -1.5 1 radius 1.0 axis 0 1.0 0 ... 
+                                          height 3.0 resolution 0.4 cap false
+
+; Import the geometry polygons as fractures for cutting
+fracture import from-geometry 'tunnel-box' 
+fracture import from-geometry 'tunnel-arc'
+
+; Cut the rigid blocks, making sure not to cut those not intersected 
+; by the tunnel boundary
+rblock cut fractures 'tunnel-arc' throughgoing group 'supportBlock' ... 
+                                  intersects-box 1 2 -1.5 1.5 1 2 
+rblock cut fractures 'tunnel-arc' throughgoing group 'supportBlock' ... 
+                                  intersects-box -2 -1 -1.5 1.5 1 2 
+rblock cut fractures 'tunnel-box' throughgoing group 'supportBlock' ... 
+                                  intersects-box -1 1 -1.5 1.5 -2 2 
+rblock cut fractures 'tunnel-box' throughgoing group 'supportBlock' ... 
+                                  intersects-box -2 2 -1.5 1.5 -2 1 
+
+; Put the tunnel blocks in a group - shrink the range to exactly the 
+; tunnel dimensions
+rblock group 'tunnel' range geometry-space 'tunnel-box' ...
+                            count odd position-x -1 1
+rblock group 'tunnel' range geometry-space 'tunnel-box' ...
+                            count odd position-z -2 1
+rblock group 'tunnel' range geometry-space 'tunnel-arc' ...
+                            count odd
+
+; Scale the rigid blocks so that they overlap initially. This
+; is important as the contact position for the bonds is based 
+; on the original overlap volume. This contact position is 
+; incrementally updated when bonded. 
+rblock scale relative 1.01
+
+; Erode the rigid blocks, removing edge-edge and vertex-vertex.
+; This is important as it will greatly increase computational efficiency.
+; These contacts do not contribute to the response of the bonded material. 
+rblock erode relative skip-errors 0.1
+
+; Change the model domain so that it is periodic in the y-direction, 
+; conforming to the sample size in this direction.
+model domain extent -10 10 -1.5 1.5 -10 10 condition stop periodic stop
+
+; Remove the geometry set and fractures
+geometry delete
+fracture delete
+
+; Save the model 
+model save 'BBM_Geometry'

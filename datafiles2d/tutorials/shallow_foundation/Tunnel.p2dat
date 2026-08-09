@@ -1,0 +1,33 @@
+; fname: Tunnel.p2dat
+;
+;  Excavation of an unsupported tunnel
+;==============================================================================
+
+; The state prior to the footing load is restored
+model restore 'Assembly'
+
+ball group 'Tunnel' range circle center 16.0 5.0 radius 3.0
+ball delete range group 'Tunnel'
+
+; A number of cycles are done in order to verify that the model is stable
+; after excavation of the tunnel. The model is saved at this stage.
+model cycle 1
+model solve ratio-average 1e-4
+
+model save 'StableTunnel'
+
+;The assembly is finally loaded by the footing. What happens to the tunnel?
+wall attribute velocity-y -0.25 range group 'footing'
+
+model mechanical timestep auto
+model solve mechanical time 10.0
+
+; Solve to an equilibrium state again
+wall attribute velocity-y 0.0
+model solve ratio-average 1e-4
+
+
+model save 'UnlinedTunnel'
+
+;==============================================================================
+; eof: Tunnel.p2dat

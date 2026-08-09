@@ -1,0 +1,24 @@
+; fname: doall_parallel.p3dat
+;
+;  Create and test parallel bonded material
+;==============================================================================
+
+; restore unbonded sample and bond it
+call 'parallel_bonded.p3dat'
+
+log-file 'parallel3d.log'
+log on
+
+; run ucs test
+call 'ucs.p3dat'
+model save 'parallel_ucs'
+
+; run tension test
+model restore 'parallel_bonded'
+call 'tension.p3dat'
+model save 'parallel_tension'
+
+log off
+
+;==============================================================================
+; eof: doall_parallel.p3dat

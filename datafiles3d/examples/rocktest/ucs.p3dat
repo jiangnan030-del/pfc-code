@@ -1,0 +1,37 @@
+; fname: ucs.p3dat
+;
+;  Perform an unconfined compressive strength test on a bonded sample
+;==============================================================================
+echo off
+call 'ss_wall.fis'
+call 'fracture.p3fis'
+echo on
+
+; set up global parameters for stress and strain measurement
+@setup_wall
+
+; apply loading by moving top and bottom walls
+wall attribute velocity-z -0.15 range id 1
+wall attribute velocity-z  0.15 range id 2
+
+; apply a small amount of damping
+ball attribute damp 0.1
+
+; record histories
+fish history name 1 @axial_stress_wall
+fish history name 2 @axial_strain_wall
+
+; record cracks
+@track_init
+fish history name 3 @crack_num
+
+; cycle a few steps to get past initial vibations
+model cyc 1000
+
+; run the test until stress falls below 70% of the peak
+[peak_fraction = 0.7]
+model solve fish-halt @loadhalt_wall
+list @peak_stress
+
+;==============================================================================
+; eof: ucs.p3dat

@@ -1,0 +1,94 @@
+model new
+
+; Generate packing
+model random 10001
+[resolution = 10]   ; approx. number of balls accross specimen width 
+[davg  = 2.5e-3]    ; average ball diameter (m)
+[dratio = 1.66]     ; ball max/min diameter ratio [-]
+[tag = 'A'+ string(resolution)]
+program call 'make_brick.dat' 
+
+; Install contact model
+model restore [string.build('brick_%1-iso',tag)]
+[igap     = 0.0*davg ] 
+[emod     = 50.0e9   ]
+[kratio   = 2.5      ]
+[fric     = 0.5      ]
+[ten_mean = 20.0e6  ]
+[ten_std  = 0.0e6    ]
+[coh_mean = 100.0e6  ]
+[coh_std  = 0.0e6    ]
+[soft     = 0.0      ]
+[cut      = 1.0      ]
+[tag += '_G0_E50_KR25_S0_C1']
+program call 'bond_sb.dat' 
+
+; Perform Direct Tension Tests
+[tag = 'A10_G0_E50_KR25_S0_C1']
+model restore [string.build('brick_%1-bonded',tag)]
+[strain_rate = 1.0]
+[tag += '_SR1']
+program call 'tt.dat'
+[tag = 'A10_G0_E50_KR25_S0_C1']
+model restore [string.build('brick_%1-bonded',tag)]
+[strain_rate = 0.1]
+[tag += '_SR01']
+program call 'tt.dat'
+
+; Perform Unconfined Compression Test
+[tag = 'A10_G0_E50_KR25_S0_C1']
+model restore [string.build('brick_%1-bonded',tag)]
+[strain_rate = 1.0]
+[tag += '_SR1']
+program call 'ucs.dat'
+[tag = 'A10_G0_E50_KR25_S0_C1']
+model restore [string.build('brick_%1-bonded',tag)]
+[strain_rate = 0.1]
+[tag += '_SR01']
+program call 'ucs.dat'
+
+; Perform Direct Tension Test (using domain distortion)
+[tag = 'A10_G0_E50_KR25_S0_C1']
+model restore [string.build('brick_%1-bonded',tag)]
+[strain_rate = 1.0]
+[tag += '_SR1']
+program call 'tt2.dat'
+; Perform Unconfined Compression Test (using domain distortion)
+[tag = 'A10_G0_E50_KR25_S0_C1']
+model restore [string.build('brick_%1-bonded',tag)]
+[strain_rate = 1.0]
+[tag += '_SR1']
+program call 'ucs2.dat'
+
+; Perform Confined Compression Tests
+[tag = 'A10_G0_E50_KR25_S0_C1']
+model restore [string.build('brick_%1-bonded',tag)]
+[pc = -10.0e3]
+[strain_rate = 1.0]
+[tag = tag + '_P10_SR1']
+program call 'triax.dat'
+[tag = 'A10_G0_E50_KR25_S0_C1']
+model restore [string.build('brick_%1-bonded',tag)]
+[pc = -100.0e3]
+[strain_rate = 1.0]
+[tag = tag + '_P100_SR1']
+program call 'triax.dat'
+[tag = 'A10_G0_E50_KR25_S0_C1']
+model restore [string.build('brick_%1-bonded',tag)]
+[pc = -500.0e3]
+[strain_rate = 1.0]
+[tag = tag + '_P500_SR1']
+program call 'triax.dat'
+[tag = 'A10_G0_E50_KR25_S0_C1']
+model restore [string.build('brick_%1-bonded',tag)]
+[pc = -1000.0e3]
+[strain_rate = 1.0]
+[tag = tag + '_P1000_SR1']
+program call 'triax.dat'
+[tag = 'A10_G0_E50_KR25_S0_C1']
+model restore [string.build('brick_%1-bonded',tag)]
+[pc = -10000.0e3]
+[strain_rate = 1.0]
+[tag = tag + '_P10000_SR1']
+program call 'triax.dat'
+program return

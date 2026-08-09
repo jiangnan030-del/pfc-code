@@ -1,0 +1,29 @@
+; fname: load.p3dat
+;
+; Restore the faulted BPM
+; Apply gravitational load and test different joint friction angles
+;==============================================================================
+model restore 'fault'
+
+; Fix row of balls at the bottom
+ball fix vel range position-z -6 -5.3
+
+; Turn on gravity
+model gravity 10
+
+model solve ratio-average 1e-5
+
+model save 'load_fric35'
+
+; now set friction angle to 25 degrees
+fracture property 'sj_fric' 0.466
+
+; Decrease damping
+ball attribute damp 0.1
+
+; Do not use solve command since we expect unstable sliding
+model cyc 10000
+
+model save 'load_fric25'
+;==============================================================================
+; eof: load.p3dat

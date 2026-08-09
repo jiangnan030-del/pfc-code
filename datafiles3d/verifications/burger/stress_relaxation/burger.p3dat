@@ -1,0 +1,64 @@
+;=============================================================================
+; fname: burger.p3dat
+;
+; Relaxation test of Burger's contact model (initial 0.01 overlap) 
+;=============================================================================
+model new
+model title 'Relaxation test of Burger\'s contact model (initial 0.01 overlap)'
+;---------------------------
+[k_set = 1.0e8]
+[c_set = 1.0e8]
+[f_set = 0.0  ]
+[rad   = 0.05 ]
+[un    = 0.01 ]
+;---------------------------
+fish define cal_cf
+  cal_cf = comp.x(contact.prop(cpnt,'bur_force'))
+  cal_age = mech.time.total - age0
+end
+;---------------------------
+fish define compare_func
+  local numPnt  = table.size(1)
+  global errmax  = 0.0
+  local a1 = c_set/k_set + c_set * (1.0/k_set + 1.0/k_set)
+  local a2 = c_set*c_set/(k_set*k_set)
+  local b1 = c_set
+  local b2 = c_set*c_set/k_set
+  local z1 = (-a1+math.sqrt(a1*a1-4.0*a2))/(2.0*a2)
+  local z2 = (-a1-math.sqrt(a1*a1-4.0*a2))/(2.0*a2)
+  local aa1 = (b2*z1+b1)/a2/(z1-z2)
+  local aa2 = (b2*z2+b1)/a2/(z2-z1)
+  loop n (1,numPnt)
+    local tt = table.x(1,n)
+    table.x(2,n) = table.x(1,n)
+    table.y(2,n) = un*(aa1*math.exp(z1*tt)+aa2*math.exp(z2*tt))
+    errmax  = math.max(errmax,math.abs(table.y(1,n)-table.y(2,n))/table.y(2,n))
+  endLoop
+  io.out(string.build(' Max. error = %1 %',string(errmax*100)))
+end
+;=====================================
+contact cmat default model burger property ...
+             bur_knk @k_set bur_cnk @c_set bur_knm  @k_set ...
+             bur_cnm @c_set bur_ksk @k_set bur_csk @c_set ...
+             bur_ksm @k_set bur_csm @c_set bur_fric @f_set 
+; --- Create two balls, assign properties and BCs.
+model domain extent -1 1 
+ball create id 1 rad @rad position-z 0.0
+ball create id 2 rad @rad position-z [2.0*rad-un]
+ball attribute density 2600.0
+ball fix velocity-x velocity-y velocity-z spin
+model clean
+[cpnt = contact.find('ball-ball',1)
+;
+history fish @cal_cf
+history fish @cal_age
+history interval = 1000
+[age0 = mech.time.total]
+model mechanical timestep fix 1e-3
+model solve time 10.0 
+history export 1 vs 2 table 1
+@compare_func
+model save 'system-final.p3sav'
+return
+;=============================================================================
+; eof: burger.p3dat

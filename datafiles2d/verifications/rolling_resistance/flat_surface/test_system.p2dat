@@ -1,0 +1,40 @@
+;===========================================================================
+; fname: test_system.p2dat
+;===========================================================================
+
+; CASE HORIZONTAL-0: no rolling friction
+model restore 'system-ini'
+contact property fric 0.8
+model solve time 1.5
+model save 'final-horizontal-0.p2sav'
+
+; CASE HORIZONTAL-1: friction and rolling friction
+model restore 'system-ini'
+contact property fric 0.8 rr_fric 0.1
+model solve time 1.5
+model save 'final-horizontal-1.p2sav'
+
+; CASE HORIZONTAL-2: friction, rolling friction and damping 
+model restore 'system-ini'
+contact property fric 0.8 rr_fric 0.1 dp_sratio 0.2
+model solve time 1.5
+model save 'final-horizontal-2.p2sav'
+
+; CASE INCLINED-1: rolling friction below tangent of the slope inclination
+model restore 'system-ini'
+[theta = math.degrad*10.0]
+model gravity [-9.81*math.sin(theta)] [-9.81*math.cos(theta)]
+contact property fric 0.8 rr_fric 0.1 dp_sratio 0.2
+model solve time 1.5
+model save 'final-inclined-1.p2sav'
+
+; CASE INCLINED-2: rolling friction equal to tangent of the slope inclination
+model restore 'system-ini'
+[theta = math.degrad*10.0]
+model gravity [-9.81*math.sin(theta)] [-9.81*math.cos(theta)] 
+contact property fric 0.8 rr_fric [math.tan(theta)] dp_sratio 0.2
+model solve time 1.5
+model save 'final-inclined-2.p2sav'
+program return
+;=============================================================================
+; eof: test_system.p2dat

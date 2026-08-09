@@ -1,0 +1,53 @@
+; fname: make_intact.p2dat
+;
+;  Create parallel bonded sample
+;==============================================================================
+model new
+model title 'Simulating slip on a fault (Smooth Joint Contact model)'
+
+; Set the domain extent
+model domain extent -20 20
+
+; Modify the default slots of the Contact Model Assignment Table
+; This sets the normal stiffness only for all contacts
+contact cmat default model linearpbond property kn 5e7 dp_nratio 0.5 
+
+; Generate walls 
+wall generate box -6 6
+
+; Distribute balls in the box.
+model random 1001
+ball distribute porosity 0.05 radius 0.2 0.3 box -6 6
+
+; Set ball attributes
+ball attribute density 1000.0 damp 0.7
+
+; Calm the system
+model cycle 1000 calm 10
+; Solve the system to a target limit (here the average force ratio)
+; Use density scaling to quickly reach equilibrium
+model mechanical timestep scale
+model solve ratio-average 1e-3
+model mechanical timestep auto
+model calm
+
+; delete walls
+wall delete
+
+; Install parallel bonds to particles in contact 
+; assign very high strength to prevent breakage
+contact method bond gap 0.0
+contact property pb_kn 1e8 pb_ks 1e8 pb_ten 1e12 pb_coh 1e12 pb_fa 30.0
+
+; Reset ball displacement 
+ball attribute displacement multiply 0.0
+
+; Set linear stiffness to 0.0 and force reset of the linear contact forces. 
+contact property kn 0.0 lin_force 0.0 0.0
+ball attribute force-contact multiply 0.0 moment-contact multiply 0.0 
+model cycle 1
+model solve ratio-average 1e-5
+
+model save 'intact'
+;==============================================================================
+; eof: make_intact.p2dat

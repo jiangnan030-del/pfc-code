@@ -1,0 +1,285 @@
+; fname: array_strength.p3dat
+;
+;     Strength of face-centered cubic array of rigid spheres
+;     Axisymmetric and plane-strain cases
+;=============================================================================
+model new
+fish define c_para
+; --- input ---
+  global radb = 20
+  global conf_p = 1.e6
+  global pzvel = 0.0
+  global mzvel = 0.0
+; --- calculation ---
+  global dhz   = math.sqrt(2) * radb
+  global small = radb * 0.01
+  global drang = radb * 0.5
+  global height = 4.0 * dhz
+  global zt1 = 2.0 * dhz - drang
+  global zt2 = 2.0 * dhz + drang
+  global zb1 = - zt2
+  global zb2 = - zt1
+  global yt1 = radb * 1.5
+  global yt2 = radb * 2.5
+  global yb1 = - yt2
+  global yb2 = - yt1
+  
+  command
+    model domain extent [-5.0*radb] [5.0*radb] ...
+                  [-5.0*radb] [5.0*radb] ...  
+                  [-5.0*radb] [5.0*radb] ...
+           condition d d d   
+  endcommand
+end
+; --- measurement circle ---
+fish define c_mes
+   global radi = radb + small
+   command
+      measure create id 1 rad @radi
+   end_command
+   global mp = measure.find(1)
+end
+
+fish define c_stres
+   global mstr = measure.stress(mp)
+   global c_s11 = mstr(1,1)
+   global c_s22 = mstr(2,2)
+   global c_s33 = mstr(3,3)
+   global c_s12 = mstr(1,2)
+   global c_s13 = mstr(1,3)
+   global c_s23 = mstr(2,3)
+   global c_s21 = mstr(2,1)
+   global c_s31 = mstr(3,1)
+   global c_s32 = mstr(3,2)
+  
+  if c_s11 < c_s22 then
+    global c_s1 = c_s11
+    global c_s2 = c_s22
+  else
+    c_s1 = c_s22
+    c_s2 = c_s11
+  end_if
+  if c_s2 < c_s33 then
+    global c_s3 = c_s33
+  else
+    if c_s1 < c_s33 then
+      c_s3 = c_s2
+      c_s2 = c_s33
+    else
+      c_s3 = c_s2
+      c_s2 = c_s1
+      c_s1 = c_s33
+    end_if
+  end_if
+  global c_r1 = 0.0
+  if c_s3 # 0.0 then
+    c_r1 = c_s1 / c_s3
+  end_if
+  global c_r2 = 0.0
+  if c_s3 # 0.0 then
+    c_r2 = c_s2 / c_s3
+  end_if
+end
+
+fish define g_large
+  global dis   = 2. * radb
+  global dism  = - dis
+  global numid = numid + 1
+  command
+    ball create id @numid position-x 0. ...
+                          position-y @dis position-z @zb rad @radb
+  end_command
+  numid = numid + 1
+  command
+    ball create id @numid position-x @dism ...
+                          position-y 0. position-z @zb rad @radb
+  end_command
+  numid = numid + 1
+  command
+    ball create id @numid position-x 0. ...
+                          position-y 0. position-z @zb rad @radb
+  end_command
+  numid = numid + 1
+  command
+    ball create id @numid position-x @dis ...
+                          position-y 0. position-z @zb rad @radb
+  end_command
+  numid = numid + 1
+  command
+    ball create id @numid position-x 0. ...
+                          position-y @dism position-z @zb rad @radb
+  end_command
+end
+
+fish define g_small
+  global radbm = - radb
+  global numid = numid + 1
+  command
+    ball create id @numid position-x @radbm ...
+                          position-y @radb position-z @zb rad @radb
+  end_command
+  numid = numid + 1
+  command
+    ball create id @numid position-x @radb  ...
+                          position-y @radb position-z @zb rad @radb
+  end_command
+  numid = numid + 1
+  command
+    ball create id @numid position-x @radbm ...
+                          position-y @radbm position-z @zb rad @radb
+  end_command
+  numid = numid + 1
+  command
+    ball create id @numid position-x @radb  ...
+                          position-y @radbm position-z @zb rad @radb
+  end_command
+end
+
+fish define g_pack
+  global zb = - 2. * dhz
+  g_large
+  global z1 = zb - small
+  global z2 = zb + small
+  command
+    ball extra 1 0 range position-z @z1 @z2
+  end_command
+  zb = -dhz
+  g_small
+  z1 = zb - small
+  z2 = zb + small
+  command
+    ball extra 1 1 range position-z @z1 @z2
+  end_command
+  zb = 0.
+  g_large
+  z1 = zb - small
+  z2 = zb + small
+  command
+    ball extra 1 0 range position-z @z1 @z2
+  end_command
+  zb = dhz
+  g_small
+  z1 = zb - small
+  z2 = zb + small
+  command
+    ball extra 1 1 range position-z @z1 @z2
+  end_command
+  zb = 2. * dhz
+  g_large
+  z1 = zb - small
+  z2 = zb + small
+  command
+    ball extra 1 0 range position-z @z1 @z2
+  end_command
+end
+
+fish define c_press
+  global d1 = 0.5 * radb
+  global d2 = 2.1 * radb
+  global c_v = - conf_p
+  command
+    ball attribute force-applied-x @c_v range position-x @d1 @d2
+    ball attribute force-applied-y @c_v range position-y @d1 @d2
+  end_command
+  d1 = -d1
+  d2 = -d2
+  c_v = conf_p
+  command
+    ball attribute force-applied-x @c_v range position-x @d2 @d1
+    ball attribute force-applied-y @c_v range position-y @d2 @d1
+  end_command
+end
+
+fish define strain_mes
+  global verdis = verdis + pzvel * tdel
+  global e1 = 2. * verdis / height
+  global c_t = tdel
+end
+
+fish define c_comp
+  c_press
+  command
+    ball property 'fric' 1.e-5
+    fish callback add @c_stres    -1.0 
+    fish callback add @strain_mes -1.0
+    model cycle 300
+  endcommand  
+end
+
+fish define c_load
+  pzvel = 0.5e-4
+  mzvel = -0.5e-4
+  command
+    history interval 1
+    ball property 'fric' 0.3
+    ball attribute velocity-z @pzvel range position-z @zb1 @zb2
+    ball attribute velocity-z @mzvel range position-z @zt1 @zt2
+    model cycle 700
+  endcommand
+end
+; --- choose contact model
+contact cmat default model Linear
+; --- generate geometrical constants ---
+@c_para
+; --- create ball assembly ---
+@g_pack
+; --- create measurement sphere ---
+@c_mes
+; --- histories ---
+history @c_t
+history @e1
+history @c_r1
+history @c_r2
+history @c_s33
+history @c_s22
+history @c_s11
+history @c_s12
+history @c_s13
+history @c_s23
+; --- property set up ---
+ball attribute den 2000 damp 0.7
+ball property 'kn' 5e11 'ks' 5e11
+model clean
+; --- fix top and bottom layers ---
+ball fix velocity-z range position-z @zb1 @zb2
+ball fix velocity-z range position-z @zt1 @zt2
+ball fix spin-x spin-y spin-z range position-z @zb1 @zt2
+model save 'ini'
+
+;-----------------------------------------------------------------------------
+;---------------            Axisymetry case                    ---------------
+;-----------------------------------------------------------------------------
+
+; --- compaction phase ---
+@c_comp
+; --- loading phase ---
+@c_load
+; --- check results ---
+@c_stres
+list @c_r1 @c_r2
+model save 'as'
+
+;-----------------------------------------------------------------------------
+;---------------           Plane-strain case                   ---------------
+;-----------------------------------------------------------------------------
+model restore 'ini'
+
+; --- fix front and back layers ---
+ball fix velocity-y range position-y @yb1 @yb2
+ball fix velocity-y range position-y @yt1 @yt2
+ball fix velocity-y range position-z [dhz-small] [dhz+small]
+ball fix velocity-y range position-z [-1.0*dhz-small] [-1.0*dhz+small]
+
+; --- compaction phase ---
+@c_comp
+; --- loading phase ---
+@c_load
+; --- check results ---
+@c_stres
+list @c_r1 @c_r2
+model save 'ps'
+
+return
+;=============================================================================
+;eof: array_strength.p3dat
+

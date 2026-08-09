@@ -1,0 +1,62 @@
+; fname: transient_sheet.p2dat
+;
+; Itasca Consulting Group, Inc.
+; ===========================================================================
+; Thermal option example :
+;        TRANSIENT RESPONSE OF SEMI-INFINITE SOLID WITH APPLIED HEAT FLUX
+;                           (CUBIC AND HEXAGONAL PACKINGS)
+;
+; ===========================================================================
+program log-file 'transient_sheet.log'
+program log on
+; ===========================================================================
+model new
+model configure thermal
+model mechanical off thermal on
+
+program echo off
+program call 'transient_sheet-utils.p2fis'
+program echo on
+model title 'Transient Thermal Response of Sheet with Constant Temperature Boundaries'
+@init_params
+
+model save 'transient_sheet-ini'
+
+fish set @n_row 10
+fish set @n_col 40
+fish set @_pack_type 1
+@close_pack(@n_row,@n_col,@_pack_type)
+;
+model solve thermal time-total 600.0
+@num_soln
+@ana_soln
+model solve thermal time-total 1200.0
+@num_soln
+@ana_soln
+model solve thermal unbalanced-maximum  1e-3
+@num_soln
+@ana_soln
+;
+model save 'transient_sheet-cubic'
+
+model res 'transient_sheet-ini'
+fish set @n_row 10
+fish set @n_col 40
+fish set @_pack_type 2
+@close_pack(@n_row,@n_col,@_pack_type)
+model thermal timestep max 1.0e2  
+model solve thermal time-total 600.0
+@num_soln
+@ana_soln
+model solve thermal time-total 1200.0
+@num_soln
+@ana_soln
+model solve thermal unbalanced-maximum  1e-3
+@num_soln
+@ana_soln
+;
+mode save 'transient_sheet-hexa'
+; ===========================================================================
+program log off
+program return
+;EOF: transient_sheet.p2dat

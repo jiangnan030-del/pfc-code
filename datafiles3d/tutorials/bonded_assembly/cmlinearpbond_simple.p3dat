@@ -1,0 +1,96 @@
+; fname: cmlinearpbond_simple.p3dat
+;
+;  Exercise the Linear Parallel Bond contact model
+;==============================================================================
+model new
+model title 'Generating a bonded assembly (Linear Parallel-Bond contact model)'
+
+; Set the domain extent.
+model domain extent -10 10
+
+; Modify the default slots of the Contact Model Assignment Table.
+; Here we choose the linear contact model (with kn=1e6) for all contact types
+; but ball-ball contacts, to which we assign the linearpbond model.
+; Note that only the linear part of the linearpbond model is activated, 
+; therefore the model will exactly behave as the linear model.
+contact cmat default model linear property kn 5e6
+contact cmat default type ball-ball ...
+                     model linearpbond property kn 5e6 proximity 0.1
+
+; Generate a box 
+wall generate box -5 5 one-wall
+
+; Distribute balls in the box.
+; The seed of the pseudo-random number generator is fixed, ensuring that the 
+; same initial configuration will be produced any time this file is executed.
+; Note also that the box extent specified with the 'ball distribute' command is
+; smaller than the box-wall generated above. This is done to avoid balls  
+; escaping from the material vessel. Consequently, the porosity specified with 
+; the 'ball distribute' command is tuned down, to achieve the desired porosity 
+; upon equilibration.
+;
+model random 10001
+ball distribute porosity 0.2 radius 0.5 0.6 box -4.5 4.5 
+model save 'balls'
+
+; Set ball attributes.
+ball attribute density 1000.0 damp 0.7
+
+; Calm the system.
+; Since the "ball distribute" command has been used above, the balls have been
+; created without regard to the overlaps. 
+model cycle 2000 calm 50
+
+; Solve the system to a target limit (here the average force ratio).
+; To reach a stable configuration faster, density scaling is activated.
+model mechanical timestep scale
+model solve ratio-average 1e-3
+model mechanical timestep auto
+model calm
+
+; Install a measurement sphere to monitor stresses within 
+; the assembly. Also reset ball displacements.
+measure create id 1 radius 5.0
+measure history name 1 stress-xx id 1  
+measure history name 2 stress-yy id 1  
+measure history name 3 stress-zz id 1
+
+; Install parallel bonds - only contacts with a linearpbond model are affected.
+contact method bond gap 0.1
+contact property pb_kn 1e6 pb_ks 1e6 pb_ten 1e6 pb_coh 1e6 pb_fa 30.0
+
+; Reset ball displacement and save the initial state.
+ball attribute displacement multiply 0.0
+model save 'initial'
+
+; Delete the walls and solve to a target average ratio. 
+wall delete
+model cycle 1
+model solve ratio-average 1e-3
+model save 'final1'
+
+; Repeat the simulation but set the linear stiffness to 0.0.
+; Note that the contact forces calculated at the previous timestep are already
+; accumulated to the contacting balls - thus the slight perturbation from
+; equilibrium.
+model restore 'initial'
+wall delete
+contact property kn 0.0
+model cycle 1
+model solve ratio-average 1e-3
+model save 'final2'
+
+; Repeat the simulation but set the linear stiffness to 0.0
+; and force a reset of the linear contact forces. All balls are fixed 
+; and the system is cycled for 1 step, to reset the linear forces.
+model restore 'initial'
+wall delete
+contact property kn 0.0 lin_force 0.0 0.0 0.0
+ball attribute force-contact multiply 0.0 moment-contact multiply 0.0 
+model cycle 1
+model solve ratio-average 1e-3
+model save 'final3'
+
+return
+;==============================================================================
+; eof: cmlinearpbond_simple.p3dat

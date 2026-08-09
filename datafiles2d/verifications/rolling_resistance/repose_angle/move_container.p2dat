@@ -1,0 +1,16 @@
+;===========================================================================
+; fname: move_container.p2dat
+;===========================================================================
+[cyl_vel = 5.0e-2]  ; upwards velocity [m/s] 
+model mechanical time-total 0.0
+contact cmat default property fric @fric rr_fric @rfric
+contact property fric @fric rr_fric @rfric
+wall attribute velocity-y @cyl_vel range id 100 by wall
+ball attribute displacement multiply 0.0
+model solve time [0.75*cyl_height/cyl_vel]
+wall attribute velocity-y 0.0 range id 100 by wall
+model solve ratio-average 1e-5
+model save [string.build('system_final-fric%1-rfric%2.p2sav',fric,rfric)]
+program return
+;===========================================================================
+; eof: move_container.p2dat

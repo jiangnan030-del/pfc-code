@@ -1,0 +1,27 @@
+; fname: Lining.p3dat
+;
+;  Installation of a lining support for the tunnel
+;==============================================================================
+model restore 'StableTunnel'
+
+contact group 'Lining' range circle center 16.0 5.0 radius 4.0
+
+contact property fric 0.18 kn 1e8 ks 1e8        ...
+        pb_kn 1e8 pb_ks 1e8 pb_ten 1e10         ...
+        pb_coh 1e10 pb_rmul 1.0 dp_nratio 0.2   ...
+        range group 'Lining'
+
+wall attribute velocity-y -0.25 range group 'footing'
+
+model save 'Lining'
+
+model mechanical timestep auto
+model solve time 10.0
+
+wall attribute velocity-y 0.0
+model solve ratio-average 1e-4
+
+model save 'LinedTunnel'
+
+;==============================================================================
+; eof: Lining.p2dat

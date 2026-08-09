@@ -1,0 +1,136 @@
+; fname: BlenderClumps.p3dat
+
+model new
+wall resolution full
+
+call '../blender_geometry/ImportBlenderGeometry.p3dat'
+
+model domain extent [lbx-0.05*dx] [ubx+0.05*dx] [lby-0.05*dy] ...
+                    [uby+0.05*dy] [lbz-0.05*dz] [ubz+dz]      ...
+                    condition destroy 
+
+wall import from-geom 'rotor1' clean id 1
+wall import from-geom 'rotor2' clean id 2
+wall import from-geom 'rotor3' clean id 3
+wall import from-geom 'rotor4' clean id 4
+wall import from-geom 'rotor5' clean id 5
+wall import from-geom 'rotor6' clean id 6
+wall import from-geom 'rotor7' clean id 7
+wall import from-geom 'rotor8' clean id 8
+
+wall import from-geom 'blade1' clean id 9
+wall import from-geom 'blade2' clean id 10
+wall import from-geom 'blade3' clean id 11
+wall import from-geom 'blade4' clean id 12
+wall import from-geom 'blade5' clean id 13
+wall import from-geom 'blade6' clean id 14
+wall import from-geom 'blade7' clean id 15
+wall import from-geom 'blade8' clean id 16
+wall group 'facetassembly' facet 
+wall group 'wallassembly'
+
+wall import from-geom 'bin' clean id 17
+wall active-side top range position-z [ubz-0.05*ubz] [ubz+0.05*ubz]
+wall active-side top range name 'facetassembly'
+
+model save 'blender'
+
+fish def setup(rpm)
+  rp_ = vector(0,0,0)
+  spin_ = vector(0,-1,0)*2*math.pi*rpm/60.0
+  knB_ = 1e4 
+  ksB_ = 1e4 
+  knW_ = 1e8
+  ksW_ = 1e8
+  fric_ = 0.18
+  dens_ = 2000
+end
+@setup(60)
+
+geometry import 'ellipsoid.stl'
+
+clump template create name 'pill' geometry 'ellipsoid' ...
+                      surfcalc bubblepack ratio 0.5 distance 150
+
+contact cmat default type Pebble-Pebble model Linear ...
+        property kn 10e4 inh off ks 10e4 inh off fric 0.18
+contact cmat default type Pebble-Facet model Linear  ...
+        property kn 10e5 inh off ks 10e5 inh off fric 0.09
+
+clump distribute porosity 0.45            ...
+                  resolution 5e-2         ...
+                  number-bins    1        ...
+                  diameter                ...
+                  bin 1 size 1.0 1.20     ...
+                        volume-fraction 1 ...
+                        template 'pill'   ...
+                            az 90 90      ...
+                            el 0 0        ...
+                            tilt 0 0      ...  
+                  box [lbx] [ubx] [lby] [uby] [lbz] [lbz+0.3*dz]
+ 
+fish def inBlender(pos,c)
+  inBlender = 1
+  if type.pointer.id(c) = clump.typeid
+    loop foreach local pb clump.pebblelist(c)
+      local tmp = 0
+      wp = wall.find(17);
+      tmp = wall.inside(wp,clump.pebble.pos(pb))
+      if tmp = 0
+        inBlender = 0
+        exit
+      endif
+    endloop
+  endif
+end
+clump delete range fish @inBlender not
+
+fish def inBody(pos,c)
+  inBody = 0
+  if type.pointer.id(c) = clump.typeid
+    loop foreach local pb clump.pebblelist(c)
+      local tmp = 0
+      loop foreach local wp wall.list
+        if wall.id(wp) # 17
+          tmp = wall.inside(wp,clump.pebble.pos(pb))
+          if tmp = 1
+            inBody = 1
+            exit
+          endif
+        endif
+      endloop
+    endloop
+  endif
+end
+clump delete range fish @inBody
+
+model gravity 0,0,-9.81
+clump attr density @dens_ damp 0.7
+
+model cycle 2000 calm 500
+model mechanical timestep scale
+model solve ratio-average 1e-1
+model mechanical timestep auto
+clump attr damp 0.0
+
+wall attr rotation-center @rp_ range group 'wallassembly'
+wall attr spin @spin_ range group 'wallassembly'
+
+;set up groups for mixing
+clump group 'FrontLeft'  range position-x [lbx-0.05*dx] 0.0 ...
+                               position-y [lby-0.05*dy] 0.5
+clump group 'FrontRight' range position-x 0.0 [ubx+0.05*dx] ...
+                               position-y [lby-0.05*dy] 0.5
+clump group 'BackLeft'   range position-x [lbx-0.05*dx] 0.0 ...
+                               position-y 0.5  [uby+0.05*dy]
+clump group 'BackRight'  range position-x 0.0 [ubx+0.05*dx] ...
+                               position-y 0.5 [uby+0.05*dy]
+
+model save 'clump_model'
+
+model solve time 0.5
+
+model save 'end_blenderclump'
+
+;=============================================================================
+; eof: BlenderClumps.p3dat
