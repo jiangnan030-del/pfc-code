@@ -1,207 +1,50 @@
-# PFC 数值模拟数据文件集
+# PFC Numerical Simulation Data Files
 
-> 本仓库收录基于 **Itasca PFC (Particle Flow Code)** 6.0 的二维（PFC2D）与三维（PFC3D）离散元数值模拟数据文件，涵盖教程示例、验证算例、工程应用及 Python 脚本接口等内容。
+This repository contains a collection of discrete element method (DEM) simulation data files built upon Itasca PFC (Particle Flow Code) 6.0, covering both two-dimensional (PFC2D) and three-dimensional (PFC3D) environments. The collection spans tutorial walkthroughs, analytical verification cases, engineering application examples, and Python scripting interfaces, providing a comprehensive reference for PFC-based numerical modeling workflows.
 
-## 目录结构
+## Repository Structure
+
+The repository is organized into three top-level directories. The `data/` directory holds a self-developed anchor bolt pull-out simulation project, structured as a sequential seven-step workflow. The `datafiles2d/` directory contains PFC2D data files, including examples, Python scripts, thermal analysis files, tutorials, and verification cases. The `datafiles3d/` directory mirrors this organization for PFC3D, additionally featuring CFD-DEM coupling simulations, a broader range of engineering examples, and an extended set of verification benchmarks.
+
+Within `data/`, the project follows a save/restore chain architecture where each step builds upon the saved state of the previous one. The files `01_sample_build.dat` through `07_free_balance.dat` correspond to specimen generation, anchor hole creation, particle bonding, anchor ball generation and rigidification, pull-out loading, grout interface bonding, and free equilibrium, respectively. A detailed methodology document, `PFC建模要点.md`, accompanies these files and documents the modeling conventions and empirical guidelines developed throughout the project.
+
+The `datafiles2d/` directory is divided into five subdirectories. The `examples/` folder includes a granular biaxial test, a rock mechanics testing suite, and a simple bonded block model. The `python/` folder provides basic Python syntax demonstrations and a GUI example. The `thermal/` folder contains a transient heat conduction analysis. The `tutorials/` folder offers eight introductory exercises covering fundamental concepts such as the Contact Model Assignment Table (CMAT), attributes and properties, bonding, fractured rock, hopper flow, inclusions, joint slip, and shallow foundations. The `verifications/` folder presents six analytical verification cases covering adhesive rolling resistance, the Burger viscoelastic model, cantilever beams, measure logic, rolling resistance, and wave propagation.
+
+The `datafiles3d/` directory is more extensive, reflecting the richer capabilities of the three-dimensional environment. The `ccfd/` folder addresses CFD-DEM coupling with cases including cylinder flow, drop tests, an elbow geometry, a fluidized bed, one-way coupling, and a porous medium simulation, each accompanied by GiD mesh files. The `examples/` folder contains twelve engineering application cases: a buttress retaining structure, discrete fracture network (DFN) generation, fragmentation simulation, hopper flow, punch indentation, a ribbon blender with STL geometry, rockslide simulation, rock mechanics testing, a simple bonded block model, a sleeved triaxial test, a soft-bonded model, and a tunnel bonded block model. The `python/` folder provides six Python interface examples covering array interfaces, basic Python usage, GUI development, Python-PFC integration, UCS testing, and SciPy integration. The `thermal/` folder includes constrained and free thermal expansion cases. The `tutorials/` folder offers eleven exercises, including a creative table tennis simulation that demonstrates FISH callbacks and contact detection. The `verifications/` folder presents twelve analytical benchmark cases covering adhesive rolling resistance, array strength, the Burger model, cantilever beams, the Hertz contact model, measure logic, restitution, rolling resistance, settlement, sliding wedge stability, wave propagation, and coupled wave analysis.
+
+## File Types
+
+The repository contains a variety of file types, each serving a specific role within the PFC ecosystem. The primary script files use the `.p3dat` and `.p2dat` extensions for PFC3D and PFC2D command data files, respectively, while `.dat` serves as a generic PFC command file extension. Project files are stored as `.p3prj` and `.p2prj` for PFC3D and PFC2D, respectively, with `.prj` as the generic project file format. For PFC-FLAC coupled simulations, `.f3dat` and `.f3prj` extensions are used for FLAC3D command and project files. FISH language scripts — PFC's built-in programming language — are stored with `.p3fis`, `.p2fis`, or `.fis` extensions. Python scripts that interface with PFC's embedded Python interpreter use the `.py` extension. Three-dimensional geometry files imported into simulations use the `.stl` format, while input configuration files use `.inp`. Documentation is provided in Markdown (`.md`) format.
+
+## Technical Highlights
+
+### Contact Models
+
+The simulations in this repository employ several contact models, each suited to different physical scenarios. The `linear` contact model is used during specimen generation and in non-bonded stages where particles interact through simple elastic contacts. The `linearpbond` (linear parallel bond) model is the primary bonding model used for rock, anchor, and grout cementation, providing both normal and shear bond strengths. The `hertz` contact model appears in verification cases that require non-linear elastic contact mechanics. The `burger` viscoelastic model is used in stress relaxation verifications, and the `adhesive_rolling_resistance` model is employed in repose angle verification cases where both adhesion and rolling resistance are significant.
+
+### CMAT Conventions
+
+The Contact Model Assignment Table (CMAT) conventions documented in this repository represent a systematic approach to assigning contact models based on particle group membership. For intra-group contacts where both ends of a contact belong to the same group, the `range group '<group>' match 2` syntax is used to precisely select contacts. For inter-group interfaces where the two ends belong to different groups, a custom FISH function with `range fish @<function>` is required, as the `match 2` keyword cannot express cross-group conditions. Ball-facet (wall) contacts are assigned a stiffness three times that of ball-ball contacts, expressed as `emod_facet = 3 × emod_lin`, to approximate rigid boundary behavior. Stiffness parameters are defined using the `method deform emod/kratio` approach rather than directly specifying `kn/ks`, allowing PFC to automatically compute normal and shear stiffness based on local contact geometry.
+
+### Python Integration
+
+PFC 6.0 features an embedded Python interpreter that enables programmatic access to model state and FISH variables. The Python examples in this repository demonstrate several integration patterns: accessing and modifying model variables through the Python API, performing numerical data processing with NumPy and SciPy, implementing custom graphical user interfaces, and exchanging array data between PFC and NumPy through the array interface module.
+
+## Usage
+
+To use these data files, install PFC 6.0 or a later version. Project files (`.p3prj` or `.p2prj`) can be opened directly in the PFC graphical interface, or individual data files can be executed using the `call` command. For the anchor bolt pull-out project in the `data/` directory, the seven step files should be executed sequentially from `01_sample_build.dat` through `07_free_balance.dat`, as each step restores the saved state from the previous step. For tutorial and example files, they can generally be run independently by calling the corresponding `.p3dat` or `.p2dat` file from within the PFC console.
+
+The following example illustrates how to run one of the PFC3D tutorials:
 
 ```
-pfc-code/
-├── data/                          # 锚杆拉拔项目（自定义项目）
-│   ├── 01_sample_build.dat         #   第1步：试样生成
-│   ├── 02_add_anchor.dat           #   第2步：添加锚杆孔
-│   ├── 03_bond.dat                 #   第3步：颗粒胶结
-│   ├── 04_anchor_balls.dat         #   第4步：锚杆颗粒生成与刚性化
-│   ├── 05_pullout.dat              #   第5步：拉拔加载
-│   ├── 06_grout.dat                #   第6步：灌浆界面胶结
-│   ├── 07_free_balance.dat         #   第7步：自由平衡
-│   └── PFC建模要点.md              #   建模方法论与约定（长期记忆文档）
-│
-├── datafiles2d/                   # PFC2D 数据文件
-│   ├── examples/                   #   示例
-│   │   ├── granular/               #     颗粒材料双轴试验
-│   │   ├── rocktest/               #     岩石力学测试
-│   │   └── simplebbm/              #     简单块体模型
-│   ├── python/                     #   Python 脚本
-│   │   ├── basic_python/           #     Python 基础示例
-│   │   └── gui_example/            #     GUI 示例
-│   ├── thermal/                    #   热力学分析
-│   │   └── transient_sheet/        #     瞬态热传导
-│   ├── tutorials/                  #   入门教程
-│   │   ├── attributes_and_properties/
-│   │   ├── balls_in_a_box/
-│   │   ├── fractured_rock/
-│   │   ├── hopper/
-│   │   ├── inclusions/
-│   │   ├── joint_slip/
-│   │   ├── shallow_foundation/
-│   │   └── using_cmat/
-│   └── verifications/              #   验证算例
-│       ├── adhesive_rolling_resistance/
-│       ├── burger/
-│       ├── cantilever/
-│       ├── measure_logic/
-│       ├── rolling_resistance/
-│       └── wave_propagation/
-│
-├── datafiles3d/                   # PFC3D 数据文件
-│   ├── ccfd/                       #   CFD 耦合计算
-│   │   ├── cylinder.gid/
-│   │   ├── droptest1.gid/
-│   │   ├── droptest2.gid/
-│   │   ├── elbow.gid/
-│   │   ├── fluidized_bed.gid/
-│   │   ├── one_way_coupling/
-│   │   └── porous1.gid/
-│   ├── examples/                   #   工程示例
-│   │   ├── buttress/               #     支挡结构
-│   │   ├── dfn_generation/         #     离散断裂网络生成
-│   │   ├── fragmentation/          #     破碎模拟
-│   │   ├── hopper_flow/            #     料斗流动
-│   │   ├── PunchIndentation/       #     冲头压痕
-│   │   ├── ribbon_blender/         #     螺带混合器
-│   │   ├── rockslide/              #     滑坡模拟
-│   │   ├── rocktest/               #     岩石力学测试
-│   │   ├── simplebbm/              #     简单块体模型
-│   │   ├── SleevedTriaxialTest/    #     带套三轴试验
-│   │   ├── SoftBonded/             #     软胶结模型
-│   │   └── tunnelbbm/              #     隧道块体模型
-│   ├── python/                     #   Python 脚本
-│   │   ├── array_interface/
-│   │   ├── basic_python/
-│   │   ├── gui_example/
-│   │   ├── python_pfc/
-│   │   ├── test_ucs/
-│   │   └── using_scipy/
-│   ├── thermal/                    #   热力学分析
-│   │   ├── constrained_expansion/  #     约束膨胀
-│   │   └── free_expansion/         #     自由膨胀
-│   ├── tutorials/                  #   入门教程
-│   │   ├── attributes_and_properties/
-│   │   ├── balls_in_a_box/
-│   │   ├── bonded_assembly/
-│   │   ├── callbacks/
-│   │   ├── clumps_in_a_box/
-│   │   ├── fractured_rock/
-│   │   ├── hopper/
-│   │   ├── joint_slip/
-│   │   ├── shallow_foundation/
-│   │   ├── size_distribution/
-│   │   └── table_tennis/
-│   └── verifications/              #   验证算例
-│       ├── adhesive_rolling_resistance/
-│       ├── array_strength/
-│       ├── burger/
-│       ├── cantilever/
-│       ├── hertz_model/
-│       ├── measure_logic/
-│       ├── restitution/
-│       ├── rolling_resistance/
-│       ├── Settle/
-│       ├── sliding-wedge/
-│       ├── Wave/
-│       └── wave_propagation/
-│
-├── .gitignore
-└── README.md
-```
-
-## 文件类型说明
-
-| 扩展名 | 说明 |
-|--------|------|
-| `.p3dat` / `.p2dat` | PFC3D / PFC2D 命令数据文件（主脚本） |
-| `.p3prj` / `.p2prj` | PFC3D / PFC2D 项目文件 |
-| `.f3dat` | FLAC3D 命令文件（用于 PFC-FLAC 耦合） |
-| `.f3prj` | FLAC3D 项目文件 |
-| `.dat` | 通用 PFC 命令文件 |
-| `.prj` | 通用项目文件 |
-| `.p3fis` / `.p2fis` / `.fis` | FISH 语言脚本文件 |
-| `.py` | Python 脚本（PFC Python 接口） |
-| `.stl` | STL 几何文件（导入三维几何体） |
-| `.inp` | 输入配置文件 |
-| `.md` | 文档文件 |
-
-## 主要内容
-
-### `data/` — 锚杆拉拔数值试验项目
-
-一个完整的锚杆拉拔离散元模拟项目，按 save/restore 链分步执行：
-
-| 步骤 | 文件 | 说明 |
-|:----:|------|------|
-| 1 | `01_sample_build.dat` | 建立立方体试样（50×50×50），生成颗粒、初始平衡 |
-| 2 | `02_add_anchor.dat` | 生成圆柱锚杆孔墙体、删除孔内颗粒 |
-| 3 | `03_bond.dat` | 重定义 CMAT 并施加平行胶结（linearpbond） |
-| 4 | `04_anchor_balls.dat` | 生成锚杆颗粒列、刚性化胶结、删除锚杆墙与出口边界 |
-| 5 | `05_pullout.dat` | 固定锚固端、施加拉拔力、监测位移与反力 |
-| 6 | `06_grout.dat` | 胶结锚杆-岩石界面（模拟灌浆粘结） |
-| 7 | `07_free_balance.dat` | 释放约束、系统自由平衡 |
-
-建模方法论详见 [`data/PFC建模要点.md`](data/PFC建模要点.md)。
-
-### `datafiles2d/` — PFC2D 数据文件
-
-- **examples**：颗粒材料双轴试验（granular）、岩石力学测试（rocktest）、简单块体模型（simplebbm）
-- **python**：Python 基础语法与 GUI 示例
-- **thermal**：瞬态热传导分析
-- **tutorials**：8 个入门教程，涵盖基础概念（CMAT、属性、胶结、断裂等）
-- **verifications**：6 类验证算例（滚动阻力、Burger 模型、悬臂梁、波传播等）
-
-### `datafiles3d/` — PFC3D 数据文件
-
-- **ccfd**：CFD-DEM 耦合计算（圆柱绕流、流化床、多孔介质、单向耦合等）
-- **examples**：12 个工程应用示例（滑坡、隧道、三轴试验、混合器、DFN 等）
-- **python**：6 个 Python 接口示例（数组接口、SciPy 集成、UCS 测试等）
-- **thermal**：热-力耦合分析（约束膨胀、自由膨胀）
-- **tutorials**：11 个入门教程（含乒乓球游戏等趣味示例）
-- **verifications**：12 类验证算例（Hertz 接触、恢复系数、滑动楔体、波传播等）
-
-## 技术要点
-
-### 接触模型
-
-本仓库涉及的主要接触模型：
-
-| 模型 | 用途 |
-|------|------|
-| `linear` | 线性接触模型（成样、非胶结阶段） |
-| `linearpbond` | 平行胶结模型（岩石、锚杆、灌浆胶结） |
-| `hertz` | Hertz 接触模型（验证算例） |
-| `burger` | Burger 粘弹性模型（应力松弛） |
-| `adhesive_rolling_resistance` | 粘附滚动阻力模型 |
-
-### CMAT 规范
-
-- 组内接触（两端同组）：`range group '<组名>' match 2`
-- 跨组界面（两端分属两组）：`range fish @<自定义函数>`
-- 球-墙接触刚度取球-球的 3 倍（`emod_facet = 3 × emod_lin`）
-- 刚度用 `method deform emod/kratio` 定义，不直接写 `kn/ks`
-
-### Python 接口
-
-PFC 内置 Python 解释器，支持通过 Python 脚本：
-- 访问模型变量与 FISH 变量
-- 使用 NumPy / SciPy 进行数据处理
-- 实现自定义 GUI 界面
-- 数组接口实现 PFC 数据与 NumPy 交互
-
-## 使用方法
-
-1. 安装 PFC 6.0（或更高版本）
-2. 打开对应的项目文件（`.p3prj` / `.p2prj`）或直接 `call` 数据文件
-3. 按步骤执行（对于 `data/` 下的锚杆项目，按 01→07 顺序执行）
-
-```pfc
-; 示例：在 PFC3D 中运行教程
+; Run the "Balls in a Box" tutorial in PFC3D
 call 'datafiles3d/tutorials/balls_in_a_box/cmlinear_simple.p3dat'
 ```
 
-## 相关链接
+## Related Resources
 
-- [Itasca 官网](https://www.itascacg.com/)
-- [PFC 在线文档](https://docs.itascacg.com/pfc/)
-- [PFC 论坛](https://forum.itascacg.com/)
+Additional documentation and community resources are available through the [Itasca Consulting Group website](https://www.itascacg.com/), the [PFC online documentation](https://docs.itascacg.com/pfc/), and the [Itasca user forum](https://forum.itascacg.com/).
 
-## 许可声明
+## License
 
-本仓库为学习与研究用途。PFC 相关文件内容基于 Itasca PFC 软件命令体系编写，PFC 软件版权归 Itasca Consulting Group 所有。
+This repository is intended for educational and research purposes. The PFC data files are written using the command syntax of Itasca PFC software. PFC and all related trademarks are the property of Itasca Consulting Group, Inc.
